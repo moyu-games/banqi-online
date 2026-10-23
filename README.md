@@ -4,7 +4,7 @@
 
 Real-time multiplayer Banqi (Taiwanese dark chess) that runs entirely in the browser. No accounts, no installs, and no backend of its own: create a room, share the link, and play.
 
-**Play now: <https://kuanlinbilly.github.io/banqi-online/>**
+**Play now: <https://moyu-games.github.io/banqi-online/>**
 
 The whole site is static files on GitHub Pages. Players connect peer-to-peer over WebRTC and fall back to a public MQTT relay when a direct connection is not possible.
 

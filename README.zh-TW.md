@@ -4,7 +4,7 @@
 
 在瀏覽器裡跟朋友線上下台灣暗棋。不用註冊，也不用裝 App，開一局、把連結傳給朋友就能開始。
 
-**立即遊玩：<https://kuanlinbilly.github.io/banqi-online/>**
+**立即遊玩：<https://moyu-games.github.io/banqi-online/>**
 
 整個網站都是靜態檔案，放在 GitHub Pages 上，沒有自己的後端伺服器。兩台裝置優先直接連線，連不上時改走公共 MQTT 中繼。
 
