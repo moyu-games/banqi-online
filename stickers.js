@@ -45,8 +45,21 @@
   // Meme pack (images in stickers/), listed first.
   const MEMES = ['好啦', '吃太飽', '肚子餓', '我沒事', '氣噗噗', '閃身步', '先閃了', '沒在怕', '晚安', '好冷', '害羞', '蛤',
     '加一', '衝啊', '我來了', '謝謝', '讚啦', '想吃', '沒錢了', '躺平', '加油', '下班啦', '生日快樂', '掰掰'];
-  const STICKERS = MEMES.map((name, k) => ({ id: 'n-' + (k + 1), name, img: `stickers/${String(k + 1).padStart(2, '0')}.webp` }));
-  for (const k in mascot) STICKERS.push({ id: 'm-' + k, name: '棋寶' + MASCOT_NAMES[k], svg: svg(mascot[k]) });
-  WORDS.forEach(([txt, c], i) => STICKERS.push({ id: 'w-' + i, name: txt, svg: word(txt, c) }));
+  const STICKERS = MEMES.map((name, k) => ({ id: 'n-' + (k + 1), group: 'meme', name, img: `stickers/${String(k + 1).padStart(2, '0')}.webp` }));
+  for (const k in mascot) STICKERS.push({ id: 'm-' + k, group: 'qibao', name: '棋寶' + MASCOT_NAMES[k], svg: svg(mascot[k]) });
+  WORDS.forEach(([txt, c], i) => STICKERS.push({ id: 'w-' + i, group: 'qibao', name: txt, svg: word(txt, c) }));
+
+  // Dancing cats, linked straight from Tenor (Tenor serves them; nothing is copied into this site).
+  // "cut" ones are Tenor's transparent sticker versions, used for the victory dance.
+  const TENOR = 'https://media.tenor.com/';
+  const CATS_CUT = [['TcGFFG6utCk', 'dancing-cat-dance'], ['XOcBNSGZF2o', 'dancing-cats-dancing-cat'], ['E1E7Sv8n-kA', 'cat-dance'], ['LVCxvUXMYTE', 'gato-dance'],
+    ['OrrDuvDw8B0', '7tv-cattime'], ['5EYt5mnIMvw', 'silly-cat-dance'], ['d-HSksPE2dM', 'cat-dance-happy-dance-cat'], ['Cbgs3WHCq_A', 'kitty-dance'],
+    ['vkJQcnn06_E', 'dancing-cat-oppa-gangnam-style'], ['3gE520j0eiw', 'meow-zhe'], ['GQAsycjoZG8', 'scuba-scuba-cat'], ['Pj1z6_WvKdw', 'maxwell-cat-maxwell']];
+  const CATS = [['-qBsG1HwR4o', 'cat-dance-dancing-cat'], ['FjB8OD0DZjg', 'cat-dance-cat'], ['aQFxoTQshVM', 'dance-cat-dance-funny'], ['dL6KEHdRaaI', 'orange-cat-dancing'],
+    ['uSv9cb5DMEU', 'kucing-joget-joget'], ['opE011ucJ6k', 'dancing-cat'], ['g0Cb_FlAXGw', 'dance'], ['5BYK-WS0__g', 'cool-fun'], ['DINYn_yshao', 'cat-cat-dancing'],
+    ['YR1hxyktKYY', 'cat'], ['YfUCc6gacQM', 'cats-dancing-brazil-dance'], ['GnT6WEh2xYk', 'cat-showercap-slyonicz'], ['3eV6Js6lcLw', 'dancing-cat-hump'],
+    ['EX80kSnyheg', 'cat-chinese'], ['e-sar8g5Gb4', 'ai-kitty-dance']];
+  CATS_CUT.forEach(([id, slug]) => STICKERS.push({ id: 'c-' + id, group: 'cat', cut: true, name: '跳舞貓', img: `${TENOR}${id}AAAAm/${slug}.webp` }));
+  CATS.forEach(([id, slug]) => STICKERS.push({ id: 'c-' + id, group: 'cat', name: '跳舞貓', img: `${TENOR}${id}AAAA1/${slug}.webp` }));
   root.STICKERS = STICKERS;
 })(this);

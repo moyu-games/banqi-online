@@ -115,6 +115,14 @@
     return { ok: true, state: s };
   }
 
-  const api = { ROWS, COLS, N, RANK, DRAW_LIMIT, newGame, targets, legalActions, apply, canCapture, other };
+  // The player `role` gives up; the other side wins at once.
+  function resign(state, role) {
+    if (state.winner) return { ok: false, err: 'game over' };
+    const s = JSON.parse(JSON.stringify(state));
+    s.winner = other(role); s.reason = 'resign'; s.resigned = role;
+    return { ok: true, state: s };
+  }
+
+  const api = { ROWS, COLS, N, RANK, DRAW_LIMIT, newGame, targets, legalActions, apply, resign, canCapture, other };
   if (typeof module !== 'undefined') module.exports = api; else root.Banqi = api;
 })(this);
