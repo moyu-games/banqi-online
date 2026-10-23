@@ -58,12 +58,12 @@
 
   /* players */
   .players { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: stretch; margin-top: 12px; }
-  .player { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 9px 12px; display: flex; align-items: center; gap: 10px; transition: box-shadow .35s, border-color .35s, background .35s; min-width: 0; }
+  .player { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 9px 12px; display: flex; align-items: center; gap: 10px; transition: box-shadow .35s, border-color .35s, background .35s; min-width: 0; }
   .player.right { flex-direction: row-reverse; text-align: right; }
   .player .disc { width: 30px; height: 30px; border-radius: 50%; flex: none; display: grid; place-items: center; font-family: var(--kai); font-size: 18px; background: #5a3e26; color: rgba(255, 230, 190, .5); box-shadow: inset 0 0 0 2px rgba(0,0,0,.25); }
   .player .disc.r { background: radial-gradient(circle at 35% 30%, var(--ivory-1), var(--ivory-2)); color: var(--red); box-shadow: inset 0 0 0 2px var(--red); }
   .player .disc.b { background: radial-gradient(circle at 35% 30%, var(--ivory-1), var(--ivory-2)); color: var(--black); box-shadow: inset 0 0 0 2px var(--black); }
-  .player .av { position: relative; width: 60px; height: 60px; flex: none; border-radius: 50%; background: rgba(255, 244, 225, .08); box-shadow: 0 0 0 3px #6b5a48; }
+  .player .av { position: relative; width: 72px; height: 72px; flex: none; border-radius: 50%; background: rgba(255, 244, 225, .08); box-shadow: 0 0 0 3px #6b5a48; }
   .player .av > img, .player .av > svg { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; display: block; padding: 3px; }
   .player .av.r { box-shadow: 0 0 0 3px var(--red), 0 0 14px rgba(214, 64, 46, .55); }
   .player .av.b { box-shadow: 0 0 0 3px #e9dfcc, 0 0 14px rgba(240, 230, 210, .35); }
@@ -233,6 +233,25 @@
   .tray-tabs button.on { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); }
   button:disabled { opacity: .4; cursor: default; }
   .credit { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; }
+  /* taunts */
+  .taunts { margin-bottom: 10px; }
+  .taunts h4 { margin: 4px 0 6px; font-size: 13px; color: var(--muted); font-weight: 600; }
+  .taunts .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .taunts .chips button { padding: 5px 11px; font-size: 14px; }
+  .player .think { position: absolute; bottom: 4px; font-size: 11px; color: var(--gold); background: rgba(0, 0, 0, .45); padding: 1px 8px; border-radius: 999px; white-space: nowrap; pointer-events: none; }
+  #pOpp .think { left: 10px; } #pMe .think { right: 10px; }
+  .say { position: fixed; z-index: 86; pointer-events: none; max-width: min(240px, 60vw); padding: 10px 16px; border-radius: 18px; background: #fff7e6; color: #2a1a0a;
+    font-family: var(--kai); font-weight: 700; font-size: 22px; line-height: 1.2; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, .5), 0 0 0 2px var(--gold); white-space: nowrap; }
+  .say::before { content: ""; position: absolute; top: 50%; margin-top: -9px; border: 9px solid transparent; }
+  .say.me::before { left: -16px; border-right-color: #fff7e6; } .say.opp::before { right: -16px; border-left-color: #fff7e6; }
+  .snail { position: fixed; z-index: 87; font-size: 56px; pointer-events: none; bottom: 22%; }
+  #brag { position: fixed; inset: 0; z-index: 88; display: grid; place-items: center; pointer-events: none; }
+  #brag .card { background: rgba(28, 20, 14, .95); border: 2px solid var(--gold); border-radius: 18px; padding: 16px 20px; text-align: center; box-shadow: 0 20px 60px rgba(0, 0, 0, .6); max-width: calc(100vw - 32px); }
+  #brag .t { font-family: var(--kai); font-size: 24px; color: var(--gold); margin-bottom: 10px; }
+  #brag .row { justify-content: center; gap: 6px; flex-wrap: wrap; }
+  #brag .mini { width: 40px; height: 40px; font-size: 26px; }
+  #quick { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 84; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: max-content; max-width: calc(100vw - 24px); }
+  #quick button { background: #2c2219; border-color: var(--gold); color: var(--gold); font-weight: 700; box-shadow: 0 8px 24px rgba(0, 0, 0, .5); }
   #toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); background: #2c2219; border: 1px solid var(--line); color: var(--ink); padding: 9px 16px; border-radius: 999px; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; z-index: 70; max-width: calc(100% - 32px); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
@@ -242,7 +261,7 @@
     button.icon { width: 34px; height: 34px; }
     .players { gap: 6px; margin-top: 8px; }
     .player { padding: 6px 8px; gap: 7px; border-radius: 12px; }
-    .player .av { width: 46px; height: 46px; }
+    .player .av { width: 54px; height: 54px; }
     .player .av .colr { width: 19px; height: 19px; font-size: 11px; right: -4px; bottom: -4px; }
     .player .who { font-size: 13px; }
     .mini { width: 16px; height: 16px; font-size: 10px; }
@@ -295,11 +314,16 @@
 
     <div class="row" style="justify-content:space-between;margin-top:12px">
       <span class="conn" id="conn"></span>
-      <span class="row"><button id="inviteBtn" class="hidden">複製邀請連結</button><button id="undoBtn">悔棋</button><button id="resignBtn">認輸</button><button id="newBtn" data-t="newGame"></button></span>
+      <span class="row"><button id="inviteBtn" class="hidden">複製邀請連結</button><button id="hurryBtn" class="hidden">催 🐌</button><button id="undoBtn">悔棋</button><button id="resignBtn">認輸</button><button id="newBtn" data-t="newGame"></button></span>
     </div>
 
     <div class="panel" id="chatCard">
       <div class="reacts" id="reacts"></div>
+      <div class="taunts hidden" id="tauntPanel">
+        <h4>語音嘲諷（對方會聽到）</h4><div class="chips" id="tauntChips"></div>
+        <h4>音效板</h4><div class="chips" id="boardChips"></div>
+        <div class="chips"><button type="button" id="bragBtn">🏆 炫耀戰利品</button></div>
+      </div>
       <div class="tray hidden" id="tray">
         <div class="tray-tabs" id="trayTabs"><button type="button" data-g="meme" class="on">梗圖</button><button type="button" data-g="nailong">奶龍</button><button type="button" data-g="cat">跳舞貓</button><button type="button" data-g="cry">哭哭貓</button><button type="button" data-g="shock">震驚貓</button><button type="button" data-g="clap">拍手</button><button type="button" data-g="speechless">無言</button><button type="button" data-g="qibao">棋寶</button><button type="button" data-g="mine">我的</button></div>
         <form class="link-form hidden" id="linkForm"><input type="url" id="linkInput" placeholder="貼上 Tenor / Giphy 的圖片網址" autocomplete="off"><button class="primary">加入</button></form>
@@ -325,18 +349,20 @@
 </main>
 <div id="fxTop"></div>
 <div id="party"></div>
+<div id="brag" class="hidden"></div>
+<div id="quick" class="hidden"></div>
 <div id="prof" class="hidden"><div class="card"><h3>你的名字和頭像</h3><input id="profName" maxlength="12" placeholder="名字（最多 12 個字）" autocomplete="off"><div class="av-grid" id="avGrid"></div><div class="row" style="justify-content:flex-end"><button class="primary" id="profSave">好了</button></div></div></div>
 <div id="ask" class="hidden"><div class="card"><p id="askText"></p><div class="row"><button class="primary" id="askYes"></button><button id="askNo"></button></div></div></div>
-<div class="ver">版本 12</div>
+<div class="ver">版本 13</div>
 <div id="overlay" class="hidden"><div class="card"><div class="stamp" id="ovStamp"></div><h2 id="ovTitle"></h2><p id="ovReason"></p><div class="row"><button class="primary" id="ovAgain" data-t="again"></button><button id="ovClose" data-t="close"></button></div></div></div>
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
-<script src="logic.js?v=12"></script>
-<script src="stickers.js?v=12"></script>
+<script src="logic.js?v=13"></script>
+<script src="stickers.js?v=13"></script>
 <script>
-const APP_VER = '12';
+const APP_VER = '13';
 (function checkVersion() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.text() : '')).then(v => {
     v = v.trim();
@@ -454,6 +480,33 @@ const sfx = {
       tone(PENTA[mel[b]] || 1568, .18, { type: 'square', vol: .045, delay: at });
     }
   },
+  laugh() {   // canned studio laughter: a few voices of short "ha" bursts
+    for (let v = 0; v < 4; v++) for (let k = 0; k < 9; k++) {
+      const d = v * .07 + k * (.15 + v * .01) + Math.random() * .03;
+      noise(.08, { freq: 900 + v * 260 + Math.random() * 300, type: 'bandpass', q: 4, vol: .22, delay: d });
+      tone(220 + v * 55, .08, { type: 'sawtooth', vol: .035, delay: d });
+    }
+  },
+  trombone() {   // wah wah wah waaah
+    const a = ac(); if (!a || muted) return;
+    [294, 277, 262, 247].forEach((f, i) => {
+      const t0 = a.currentTime + i * .45, dur = i === 3 ? 1.4 : .4, o = a.createOscillator(), g = a.createGain(), lp = a.createBiquadFilter();
+      o.type = 'sawtooth'; o.frequency.setValueAtTime(f, t0); lp.type = 'lowpass'; lp.frequency.value = 1100;
+      if (i === 3) { const lfo = a.createOscillator(), lg = a.createGain(); lfo.frequency.value = 6; lg.gain.value = 9; lfo.connect(lg).connect(o.frequency); lfo.start(t0 + .2); lfo.stop(t0 + dur); }
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.16, t0 + .05); g.gain.setValueAtTime(.16, t0 + dur - .12); g.gain.linearRampToValueAtTime(0, t0 + dur);
+      o.connect(lp).connect(g).connect(a.destination); o.start(t0); o.stop(t0 + dur + .05);
+    });
+  },
+  rimshot() { tone(190, .16, { vol: .5, to: 120 }); tone(150, .16, { vol: .5, to: 95, delay: .18 }); noise(.7, { freq: 6000, type: 'highpass', vol: .4, delay: .38 }); knock(2500, .05, .6, .38); },
+  mosquito() {
+    const a = ac(); if (!a || muted) return;
+    const t0 = a.currentTime, o = a.createOscillator(), lfo = a.createOscillator(), lg = a.createGain(), g = a.createGain();
+    o.type = 'sawtooth'; o.frequency.value = 620; lfo.frequency.value = 17; lg.gain.value = 45;
+    lfo.connect(lg).connect(o.frequency);
+    g.gain.setValueAtTime(0, t0); [.4, .9, 1.4, 1.9].forEach((x, i) => g.gain.linearRampToValueAtTime(i % 2 ? .02 : .07, t0 + x)); g.gain.linearRampToValueAtTime(0, t0 + 2.2);
+    o.connect(g).connect(a.destination); o.start(t0); lfo.start(t0); o.stop(t0 + 2.3); lfo.stop(t0 + 2.3);
+  },
+  ding() { [0, .18, .36].forEach(d => tone(1320, .25, { type: 'triangle', vol: .3, delay: d })); },
   boing() { tone(260, .28, { type: 'triangle', vol: .28, to: 760 }); tone(760, .22, { type: 'triangle', vol: .16, delay: .2, to: 520 }); },
   bloop() { tone(420, .14, { vol: .25, to: 900 }); tone(900, .1, { vol: .12, delay: .1, to: 1300 }); },
   stamp() { thump(); noise(.12, { freq: 900, vol: .5 }); },
@@ -501,7 +554,7 @@ function fitBoard(force) {
   const cols = portrait ? 4 : 8, rows = portrait ? 8 : 4;
   const pad = portrait ? 14 + 12 : 24 + 16;
   const availW = Math.min(document.querySelector('main').clientWidth, 900) - pad;
-  const availH = innerHeight - (portrait ? 222 : 276);   // header + players + status + bottom row
+  const availH = innerHeight - (portrait ? 230 : 288);   // header + players + status + bottom row
   const cell = Math.max(38, Math.floor(Math.min(availW / cols, portrait ? availH / rows : 110)));
   $('board').style.setProperty('--cell', cell + 'px');
   $('board').classList.toggle('portrait', portrait);
@@ -556,6 +609,7 @@ function render(animate = true) {
   if (state.winner && shownOver !== state.gid + ':' + state.moveNo) { shownOver = state.gid + ':' + state.moveNo; setTimeout(showOver, animate ? 700 : 0); }
   if (!state.winner && !$('overlay').classList.contains('hidden')) hideOver();
   updateButtons();
+  trackTurn();
 }
 let cells = {};
 const cellOf = i => cells[i];
@@ -777,6 +831,7 @@ function effects(p, s) {
     else if (victim.t === 'K') { banner('斬將！', `${CH[att.c][att.t]}吃${CH[victim.c].K}`, att.c); shake(10); flash('rgba(230,70,50,.55)'); sfx.gong(.05); big = true; }
     else { popText(last.to, st.word, 'big' + (att.t === 'C' ? ' boom' : '')); shake(st.shake + ('RA'.includes(victim.t) ? 3 : 0)); }
     if (n >= 2) { banner(`連吃 ×${n}`, n >= 3 ? '停不下來！' : '', att.c, big ? 1500 : 250); sfx.combo(n, big ? 1.5 : .25); }
+    if (mover === mode && ('RAK'.includes(victim.t) || att.t === 'C' || n >= 2)) setTimeout(() => offerFollowUp(victim, att.t === 'C', n >= 2), big ? 1600 : 700);
   }, st.impact);
 }
 
@@ -927,7 +982,7 @@ const freshGame = first => Object.assign(B.newGame(first), { gid: rid() });
 
 // ---------- emoji reactions ----------
 const EMOJI = ['👍', '😂', '😱', '🔥', '😭', '🙏', '😎', '🤯'];
-$('reacts').innerHTML = EMOJI.map(e => `<button type="button" data-e="${e}">${e}</button>`).join('') + '<button type="button" class="tray-btn" id="trayBtn">貼圖</button>';
+$('reacts').innerHTML = EMOJI.map(e => `<button type="button" data-e="${e}">${e}</button>`).join('') + '<button type="button" class="tray-btn" id="trayBtn">貼圖</button><button type="button" class="tray-btn" id="tauntBtn">嘲諷</button>';
 let lastReact = 0;
 $('reacts').onclick = e => {
   const b = e.target.closest('button'); if (!b || !b.dataset.e || Date.now() - lastReact < 350) return;
@@ -1242,6 +1297,156 @@ function hideOver() {
   $('party').innerHTML = '';
 }
 
+// ---------- taunts ----------
+// Fixed phrases only (by index), so nobody can make the other phone read out arbitrary text.
+const TAUNTS = ['就這？', '你在想什麼', '謝謝招待', '我等到睡著了', '這步好棒棒', '下棋要用腦喔', '認輸吧', '你是不是在放水', '太簡單了吧', '哈哈哈哈哈', '將軍拿下！', '快點啦！'];
+const BOARD = [['😂 罐頭笑聲', 'laugh'], ['🎺 悲傷長號', 'trombone'], ['🥁 蹦蹦嚓', 'rimshot'], ['🦟 蚊子嗡嗡', 'mosquito']];
+$('tauntChips').innerHTML = TAUNTS.slice(0, 10).map((x, k) => `<button type="button" data-k="${k}">${x}</button>`).join('');
+$('boardChips').innerHTML = BOARD.map(([label], k) => `<button type="button" data-b="${k}">${label}</button>`).join('');
+$('tauntBtn').onclick = () => { const tp = $('tauntPanel'); tp.classList.toggle('hidden'); if (!tp.classList.contains('hidden')) tp.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
+let lastTaunt = 0;
+function okToSend() {
+  if (!online()) { toast(t('waiting')); return false; }
+  if (Date.now() - lastTaunt < 1200) return false;
+  lastTaunt = Date.now();
+  return true;
+}
+const sendTaunt = k => { if (okToSend()) { send({ type: 'taunt', k }); sayTaunt(k, true); } };
+$('tauntChips').onclick = e => { const b = e.target.closest('[data-k]'); if (b) sendTaunt(+b.dataset.k); };
+$('boardChips').onclick = e => { const b = e.target.closest('[data-b]'); if (b && okToSend()) { send({ type: 'board', k: +b.dataset.b }); playBoard(+b.dataset.b, true); } };
+
+// speech (browser built-in voices); iOS only speaks after the page has been touched once, so unlock on first tap
+let voice = null;
+function pickVoice() { const vs = speechSynthesis.getVoices(); voice = vs.find(v => /zh[-_]TW/i.test(v.lang)) || vs.find(v => /zh/i.test(v.lang)) || null; }
+if ('speechSynthesis' in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+addEventListener('pointerdown', function unlock() {
+  removeEventListener('pointerdown', unlock);
+  try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch (_) {}
+}, { once: true });
+function speak(text) {
+  if (muted || !('speechSynthesis' in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-TW'; if (voice) u.voice = voice; u.rate = 1.05; u.pitch = 1.2;
+    speechSynthesis.speak(u);
+  } catch (_) {}
+}
+// a speech bubble next to the sender's avatar
+function say(text, mine) {
+  const who = $(mine ? 'pMe' : 'pOpp');
+  document.querySelectorAll('.say.' + (mine ? 'me' : 'opp')).forEach(x => x.remove());
+  const c = who.getBoundingClientRect(), av = who.querySelector('.av').getBoundingClientRect(), boardTop = wrapEl().getBoundingClientRect().top;
+  const d = document.createElement('div');
+  d.className = 'say ' + (mine ? 'me' : 'opp');
+  d.textContent = text;
+  document.body.appendChild(d);
+  const w = d.offsetWidth, h = d.offsetHeight, onScreen = c.bottom > 20 && c.top < innerHeight - 100;
+  const x = !onScreen ? (innerWidth - w) / 2 : mine ? Math.min(av.right + 16, innerWidth - w - 6) : Math.max(av.left - 16 - w, 6);
+  const y = !onScreen ? innerHeight * .4 : Math.max(4, Math.min(c.top + c.height / 2 - h / 2, boardTop - h - 8));
+  Object.assign(d.style, { left: x + 'px', top: y + 'px', transformOrigin: mine ? '0% 50%' : '100% 50%' });
+  if (reduced) { setTimeout(() => d.remove(), 2400); return; }
+  d.animate([{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1.15)', opacity: 1, offset: .1 }, { transform: 'scale(1)', opacity: 1, offset: .18 },
+    { transform: 'scale(1)', opacity: 1, offset: .85 }, { transform: 'translateY(-16px)', opacity: 0 }], { duration: 2600, easing: 'ease-out' }).onfinish = () => d.remove();
+}
+function sayTaunt(k, mine) {
+  if (!Number.isInteger(k) || !TAUNTS[k]) return;
+  say(TAUNTS[k], mine);
+  speak(TAUNTS[k]);
+}
+function playBoard(k, mine) {
+  if (!Number.isInteger(k) || !BOARD[k]) return;
+  sfx[BOARD[k][1]]();
+  say(BOARD[k][0], mine);
+}
+
+// hurry: the other player has been thinking a while
+let turnStart = Date.now(), lastTurnKey = '', lastHurry = 0;
+function trackTurn() {
+  const key = state ? state.gid + ':' + state.moveNo + ':' + state.turn : '';
+  if (key !== lastTurnKey) { lastTurnKey = key; turnStart = Date.now(); updateThink(); }
+}
+const oppThinking = () => !!state && mode !== 'local' && !state.winner && state.turn !== mode;
+function updateThink() {
+  const sec = Math.floor((Date.now() - turnStart) / 1000), bucket = oppThinking() && sec >= 10 ? Math.floor(sec / 5) * 5 : 0;
+  let el = $('pOpp').querySelector('.think');
+  if (!bucket) { if (el) el.remove(); }
+  else {
+    if (!el) { el = document.createElement('span'); el.className = 'think'; $('pOpp').appendChild(el); }
+    const txt = `想了 ${bucket} 秒 🐌`;
+    if (el.textContent !== txt) el.textContent = txt;
+  }
+  const can = oppThinking() && sec >= 15 && Date.now() - lastHurry > 10000;
+  $('hurryBtn').classList.toggle('hidden', mode === 'local' || !mode);
+  if ($('hurryBtn').disabled !== !can) $('hurryBtn').disabled = !can;
+}
+setInterval(() => { if (state) updateThink(); }, 1000);
+$('hurryBtn').onclick = () => {
+  if (!oppThinking() || !online()) return;
+  lastHurry = Date.now();
+  send({ type: 'hurry' });
+  say('快點啦！', true);
+  updateThink();
+};
+function getHurried() {
+  sfx.ding();
+  say('快點啦！', false);
+  speak('快點啦');
+  try { navigator.vibrate && navigator.vibrate([120, 60, 120]); } catch (_) {}
+  if (reduced) return;
+  shake(8);
+  const sn = document.createElement('div');
+  sn.className = 'snail'; sn.textContent = '🐌';
+  document.body.appendChild(sn);
+  sn.animate([{ transform: `translateX(${innerWidth}px)` }, { transform: 'translateX(-90px)' }], { duration: 2600, easing: 'linear' }).onfinish = () => sn.remove();
+}
+
+// brag: show my trophies big on the other screen
+function myTrophies() {
+  const col = state && state.colors && state.colors[mode];
+  if (!col) return null;
+  const capCol = col === 'r' ? 'b' : 'r';
+  return { c: capCol, list: state.captured[capCol].slice() };
+}
+$('bragBtn').onclick = () => {
+  const tr = myTrophies();
+  if (!tr || !tr.list.length) { toast('還沒吃到子，沒東西好炫耀'); return; }
+  if (!okToSend()) return;
+  send({ type: 'brag' });
+  toast('已炫耀給' + oppName() + '看');
+};
+function getBragged() {   // the trophies come from the shared game state, not from the message
+  const col = state && state.colors && state.colors[mode === 'host' ? 'guest' : 'host'];
+  if (!col) return;
+  const capCol = col === 'r' ? 'b' : 'r', list = state.captured[capCol];
+  if (!list.length) return;
+  const b = $('brag');
+  b.innerHTML = `<div class="card"><div class="t"></div><div class="row">${list.map(k => `<span class="mini ${capCol}">${CH[capCol][k]}</span>`).join('')}</div></div>`;
+  b.querySelector('.t').textContent = `看看 ${oppName()} 吃了什麼 😏`;
+  b.classList.remove('hidden');
+  sfx.fanfare();
+  const card = b.firstChild;
+  if (!reduced) {
+    card.animate([{ transform: 'scale(.3) rotate(-8deg)', opacity: 0 }, { transform: 'scale(1.08) rotate(2deg)', opacity: 1, offset: .5 }, { transform: 'scale(1)', opacity: 1 }], { duration: 450, easing: 'ease-out' });
+    card.querySelectorAll('.mini').forEach((m, i) => m.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-14px)' }, { transform: 'translateY(0)' }], { duration: 420, delay: 300 + i * 90, iterations: 2 }));
+  }
+  clearTimeout(getBragged.t);
+  getBragged.t = setTimeout(() => b.classList.add('hidden'), 2800);
+}
+
+// follow-up taunts right after a big capture of mine
+function offerFollowUp(victim, cannon, combo) {
+  if (mode === 'local' || !online()) return;
+  const picks = victim.t === 'K' ? [10, 6, 8] : combo ? [9, 0, 2] : cannon ? [4, 7, 2] : [2, 0, 5];
+  const q = $('quick');
+  q.innerHTML = picks.map(k => `<button type="button" data-k="${k}">${TAUNTS[k]}</button>`).join('');
+  q.classList.remove('hidden');
+  if (!reduced) q.animate([{ transform: 'translate(-50%, 30px)', opacity: 0 }, { transform: 'translate(-50%, 0)', opacity: 1 }], { duration: 300, easing: 'ease-out' });
+  clearTimeout(offerFollowUp.t);
+  offerFollowUp.t = setTimeout(() => q.classList.add('hidden'), 5000);
+}
+$('quick').onclick = e => { const b = e.target.closest('[data-k]'); if (b) { sendTaunt(+b.dataset.k); $('quick').classList.add('hidden'); } };
+
 // ---------- chat ----------
 function addChat(who, text) {
   const d = document.createElement('div');
@@ -1324,6 +1529,10 @@ function receive(m, ch) {
     else if (m.type === 'chat') addChat('friend', String(m.text).slice(0, 200));
     else if (m.type === 'react') floatEmoji(m.e, false);
     else if (m.type === 'sticker') showSticker(m, false);
+    else if (m.type === 'taunt') sayTaunt(m.k, false);
+    else if (m.type === 'board') playBoard(m.k, false);
+    else if (m.type === 'hurry') getHurried();
+    else if (m.type === 'brag') getBragged();
   } else {
     if (m.type === 'state') {
       const s = m.state;
@@ -1342,6 +1551,10 @@ function receive(m, ch) {
     else if (m.type === 'sticker') showSticker(m, false);
     else if (m.type === 'undoReq') onUndoRequest(m);
     else if (m.type === 'undoAns') onUndoAnswer(m);
+    else if (m.type === 'taunt') sayTaunt(m.k, false);
+    else if (m.type === 'board') playBoard(m.k, false);
+    else if (m.type === 'hurry') getHurried();
+    else if (m.type === 'brag') getBragged();
   }
 }
 
