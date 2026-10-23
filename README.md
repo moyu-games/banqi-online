@@ -2,7 +2,7 @@
 
 **English** · [繁體中文](README.zh-TW.md)
 
-Real-time multiplayer Banqi (Taiwanese dark chess) that runs entirely in the browser. No accounts, no installs, and no backend of its own: create a room, share the link, and play.
+Real-time multiplayer Banqi (Chinese dark chess, played with Taiwanese rules) that runs entirely in the browser. No accounts, no installs, and no backend of its own: create a room, share the link, and play.
 
 **Play now: <https://moyu-games.github.io/banqi-online/>**
 
@@ -13,7 +13,7 @@ The whole site is static files on GitHub Pages. Players connect peer-to-peer ove
 ## Features
 
 **Gameplay**
-- Taiwanese Banqi rules, including the cannon's jump capture.
+- Taiwanese rules, including the cannon's jump capture over any piece.
 - Take-backs that require the opponent's consent, resignation, and a draw rule.
 - Same-device mode for two players sharing one screen.
 - Automatic reconnection: refreshing or dropping off rejoins the same game.
