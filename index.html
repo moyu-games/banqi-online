@@ -67,14 +67,14 @@
   .player .caps { display: flex; flex-wrap: wrap; gap: 2px; min-height: 20px; }
   .player.right .caps { justify-content: flex-end; }
   .player.turn { border-color: var(--gold); background: var(--gold-soft); box-shadow: 0 0 0 1px var(--gold), 0 0 24px rgba(224, 173, 82, .25); }
-  .player.turn .who::after { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); margin: 0 6px; vertical-align: middle; animation: pulse 1.2s infinite; }
+  .player.turn .who::after { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); margin: 0 6px; vertical-align: middle; box-shadow: 0 0 8px var(--gold); }
   .vs { align-self: center; font-family: var(--kai); color: var(--muted); font-size: 18px; }
   @keyframes pulse { 50% { opacity: .25; transform: scale(.7); } }
   .mini { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; font-family: var(--kai); font-size: 13px; background: radial-gradient(circle at 35% 30%, var(--ivory-1), var(--ivory-2)); box-shadow: inset 0 0 0 1.5px currentColor; animation: popIn .35s cubic-bezier(.3, 1.6, .5, 1) both; }
   .mini.r { color: var(--red); } .mini.b { color: var(--black); }
   @keyframes popIn { from { transform: scale(0); } }
 
-  #status { text-align: center; margin-top: 10px; min-height: 22px; font-size: 15px; color: var(--ink); }
+  #status { text-align: center; margin-top: 10px; height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 15px; color: var(--ink); }
   #status b { color: var(--gold); }
 
   .share { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -82,7 +82,7 @@
   .conn { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
   .conn .dot { width: 8px; height: 8px; border-radius: 50%; background: #8a7b6b; }
   .conn .dot.on { background: #3ccf7a; box-shadow: 0 0 10px #3ccf7a; }
-  .conn .dot.wait { background: var(--gold); animation: pulse 1.2s infinite; }
+  .conn .dot.wait { background: var(--gold); }
 
   /* board */
   .board-wrap {
@@ -100,7 +100,7 @@
   .cell.last-to::before { background: rgba(255, 214, 120, .32); box-shadow: inset 0 0 0 2px rgba(255, 220, 140, .6); }
   .cell.last-from::before { box-shadow: inset 0 0 0 2px rgba(255, 220, 140, .45); border-radius: 50%; inset: 30%; }
   .cell.target { cursor: pointer; }
-  .cell.target::after { content: ""; position: absolute; width: 24%; height: 24%; border-radius: 50%; background: rgba(40, 110, 70, .85); box-shadow: 0 0 0 4px rgba(60, 180, 110, .25); animation: dotPulse 1.1s ease-in-out infinite; pointer-events: none; }
+  .cell.target::after { content: ""; position: absolute; width: 24%; height: 24%; border-radius: 50%; background: rgba(40, 110, 70, .85); box-shadow: 0 0 0 4px rgba(60, 180, 110, .25); animation: popIn .18s ease-out both; pointer-events: none; }
   .cell.target.cap::after { width: 92%; height: 92%; background: transparent; box-shadow: 0 0 0 3px rgba(230, 60, 40, .9), 0 0 18px rgba(230, 60, 40, .6); z-index: 2; }
   @keyframes dotPulse { 50% { transform: scale(.75); opacity: .7; } }
 
@@ -120,12 +120,12 @@
     box-shadow: 0 calc(var(--cell) * .035) 0 #3a2413, 0 calc(var(--cell) * .07) calc(var(--cell) * .1) rgba(0, 0, 0, .45),
       inset 0 0 0 calc(var(--cell) * .045) #8a6140, inset 0 0 0 calc(var(--cell) * .06) rgba(240, 200, 140, .35), inset 0 -3px 6px rgba(0, 0, 0, .3);
   }
-  .piece .back::after { content: "暗"; font-family: var(--kai); font-size: calc(var(--cell) * .34); color: rgba(255, 215, 150, .22); }
+  .piece .back::after { content: ""; width: 62%; height: 62%; border-radius: 50%; box-shadow: inset 0 1px 1px rgba(0, 0, 0, .35), 0 1px 0 rgba(255, 220, 170, .18); }
   .piece.down { transform: rotateY(180deg); }
   .piece.down.flippable { cursor: pointer; }
-  .piece.down.flippable:hover { transform: rotateY(180deg) translateY(-4%) scale(1.05); filter: brightness(1.12); }
+  @media (hover: hover) { .piece.down.flippable:hover { transform: rotateY(180deg) translateY(-4%) scale(1.05); filter: brightness(1.12); } }
   .piece.mine { cursor: pointer; }
-  .piece.mine:hover { transform: translateY(-4%) scale(1.04); }
+  @media (hover: hover) { .piece.mine:hover { transform: translateY(-4%) scale(1.04); } }
   .cell.sel .piece { transform: translateY(-9%) scale(1.1); filter: drop-shadow(0 0 10px rgba(255, 210, 110, .9)); z-index: 3; }
   .flip-in { animation: flipIn .6s cubic-bezier(.3, .7, .3, 1) both; }
   @keyframes flipIn {
@@ -258,13 +258,13 @@ const T = {
     create: '建立線上對局', local: '同一台裝置對下', newGame: '重新開局', share: '把這個連結傳給朋友：',
     copy: '複製', copied: '已複製連結', send: '送出', again: '再來一局', close: '關閉',
     chatPh: '打個招呼…', red: '紅方', black: '黑方', you: '你', friend: '朋友', p1: '玩家一', p2: '玩家二',
-    yourTurn: '輪到你', theirTurn: '輪到朋友', firstFlip: '點任一顆棋翻開，翻到什麼顏色你就是那一方。',
+    yourTurn: '輪到你', theirTurn: '輪到朋友', firstFlip: '點一顆棋翻開，翻到的顏色就是你的。',
     waitFirst: '等對方翻第一顆棋。', turnOf: c => `輪到${c}`, firstLocal: '翻開任一顆棋開始。',
     hint: '翻一顆棋，或走一顆自己的棋。',
     win: '你贏了！', lose: '你輸了', draw: '和局', winOf: c => `${c}獲勝！`,
     reason: { capturedAll: '對方棋子全被吃光。', noMoves: '對方無棋可走。', drawLimit: `連續 ${B.DRAW_LIMIT} 步沒有翻棋或吃子。` },
     waiting: '等朋友加入…', connected: '朋友已連線', connecting: '連線中…', disconnected: '連線中斷，重試中…',
-    hostLeft: '連不到開局的人，重試中…', confirmNew: '要重新開局嗎？目前這局會作廢。',
+    hostLeft: '連不到開局的人，請確認對方的遊戲分頁還開著…', confirmNew: '要重新開局嗎？目前這局會作廢。',
     notTurn: '還沒輪到你', full: '這局已經有兩位玩家。', netErr: '網路錯誤：', titleTurn: '● 輪到你 · 暗棋',
     rulesList: [
       '棋盤 4×8，32 顆棋全部蓋著洗亂。',
@@ -351,18 +351,23 @@ function applyLang() {
 }
 
 // ---------- board sizing ----------
-function fitBoard() {
-  const portrait = portraitMQ.matches, cols = portrait ? 4 : 8, rows = portrait ? 8 : 4;
-  const wrap = document.querySelector('.board-wrap'), pad = portrait ? 14 + 12 : 24 + 16;
+// Board size depends only on screen width/height and orientation, never on the text above it,
+// so the board does not jump when the status line changes length.
+function fitBoard(force) {
+  const portrait = portraitMQ.matches, key = innerWidth + 'x' + innerHeight + portrait;
+  if (!force && fitBoard.key && fitBoard.key.split('x')[0] == innerWidth && fitBoard.key.endsWith(String(portrait))) return;
+  fitBoard.key = key;
+  const cols = portrait ? 4 : 8, rows = portrait ? 8 : 4;
+  const pad = portrait ? 14 + 12 : 24 + 16;
   const availW = Math.min(document.querySelector('main').clientWidth, 900) - pad;
-  const top = wrap.getBoundingClientRect().top + scrollY;
-  const availH = innerHeight - Math.min(top, 220) - 70;   // keep the whole board on screen
+  const availH = innerHeight - (portrait ? 205 : 260);   // header + players + status + bottom row
   const cell = Math.max(38, Math.floor(Math.min(availW / cols, portrait ? availH / rows : 110)));
   $('board').style.setProperty('--cell', cell + 'px');
   $('board').classList.toggle('portrait', portrait);
 }
-addEventListener('resize', () => { if (state) { fitBoard(); } });
-portraitMQ.addEventListener('change', () => state && render(false));
+let lastW = innerWidth;
+addEventListener('resize', () => { if (state && innerWidth !== lastW) { lastW = innerWidth; fitBoard(true); } });
+portraitMQ.addEventListener('change', () => { if (state) { fitBoard(true); render(false); } });
 
 // ---------- rendering ----------
 function render(animate = true) {
@@ -457,7 +462,12 @@ function renderPlayers() {
     el.querySelector('.who').textContent = name + (col ? ' · ' + colName(col) : '');
     // pieces this player has captured = pieces of the other color that are gone
     const capCol = col ? (col === 'r' ? 'b' : 'r') : null;
-    el.querySelector('.caps').innerHTML = capCol ? state.captured[capCol].map(k => `<span class="mini ${capCol}">${CH[capCol][k]}</span>`).join('') : '';
+    const caps = el.querySelector('.caps'), list = capCol ? state.captured[capCol] : [];
+    if (caps.dataset.v !== capCol + list.join('')) {
+      const keep = caps.dataset.v && caps.dataset.v.startsWith(capCol) ? caps.children.length : 0;
+      caps.innerHTML = list.map((k, n) => `<span class="mini ${capCol}" style="${n < keep ? 'animation:none' : ''}">${CH[capCol][k]}</span>`).join('');
+      caps.dataset.v = capCol + list.join('');
+    }
     el.classList.toggle('turn', !state.winner && state.turn === role);
   };
   fill($('pMe'), meRole, local ? t('p1') : t('you'));
@@ -478,7 +488,7 @@ function renderStatus() {
     if (!state.colors) s = mine ? `<b>${t('yourTurn')}</b>${sep}${t('firstFlip')}` : `<b>${t('theirTurn')}</b>${sep}${t('waitFirst')}`;
     else s = mine ? `<b>${t('yourTurn')}</b>${sep}${t('hint')}` : t('theirTurn');
   }
-  $('status').innerHTML = s;
+  if ($('status').innerHTML !== s) $('status').innerHTML = s;
 }
 
 function showOver() {
@@ -581,7 +591,7 @@ const qs = new URLSearchParams(location.search), onlyRelay = qs.has('relay'), on
 const hostId = () => 'banqi-tw-' + room;
 const topic = who => `banqi-tw/v1/${room}/${who}`;
 const seen = new Set();
-let mq = null, lastHeard = 0, gotState = false, timers = [];
+let mq = null, lastHeard = 0, heard = { p2p: 0, relay: 0 }, gotState = false, startedAt = Date.now(), timers = [];
 const rid = () => Math.random().toString(36).slice(2, 12);
 const online = () => Date.now() - lastHeard < 12000;
 
@@ -591,16 +601,22 @@ function send(msg) {
   if (mq && mq.connected) mq.publish(topic(mode === 'host' ? 'guest' : 'host'), JSON.stringify(msg), { qos: 1 });
 }
 function setConn(text, kind) {
+  if (setConn.v === text + kind) return;
+  setConn.v = text + kind;
   $('conn').innerHTML = `<span class="dot ${kind || ''}"></span>${text}`;
   $('shareRow').classList.toggle('hidden', mode !== 'host' || kind === 'on');
 }
 function updateConn() {
   if (mode === 'local' || !mode) return;
-  if (online()) setConn(t('connected'), 'on');
-  else setConn(mode === 'host' ? t('waiting') : (gotState ? t('disconnected') : t('connecting')), 'wait');
+  const now = Date.now(), via = now - heard.p2p < 12000 ? '（直連）' : now - heard.relay < 12000 ? '（中繼）' : '';
+  if (online()) setConn(t('connected') + via, 'on');
+  else if (mode === 'host') setConn(t('waiting'), 'wait');
+  else if (gotState) setConn(t('disconnected'), 'wait');
+  else setConn(now - startedAt > 10000 ? t('hostLeft') : t('connecting'), 'wait');
 }
 
-function receive(m) {
+function receive(m, ch) {
+  if (ch) heard[ch] = Date.now();
   if (!m || typeof m !== 'object' || !m.id || seen.has(m.id)) return;
   seen.add(m.id);
   const wasOnline = online();
@@ -638,7 +654,7 @@ function startRelay(k = 0) {
     c.subscribe(topic(mode), { qos: 1 });
     if (mode === 'guest') send({ type: 'hello' });
   });
-  c.on('message', (_, payload) => { try { receive(JSON.parse(payload.toString())); } catch (_) {} });
+  c.on('message', (_, payload) => { try { receive(JSON.parse(payload.toString()), 'relay'); } catch (_) {} });
   const retry = () => { if (mq === c) mq = null; c.end(true); setTimeout(() => startRelay(ok ? k : k + 1), ok ? 1500 : 500); };
   c.on('close', () => { if (!c._retried) { c._retried = true; retry(); } });
   c.on('error', () => {});
@@ -651,7 +667,7 @@ function startP2P() {
     peer = new Peer(hostId(), PEER_OPTS);
     peer.on('connection', c => {
       c.on('open', () => { conn = c; send({ type: 'state', state }); });
-      c.on('data', receive);
+      c.on('data', m => receive(m, 'p2p'));
       c.on('close', () => { if (conn === c) conn = null; });
     });
     peer.on('error', err => { if (err.type === 'unavailable-id') { peer.destroy(); setTimeout(startP2P, 4000); } }); // old tab still holds the id after a reload
@@ -665,7 +681,7 @@ function startP2P() {
 function connectToHost() {
   const c = peer.connect(hostId(), { reliable: true });
   c.on('open', () => { conn = c; send({ type: 'hello' }); });
-  c.on('data', receive);
+  c.on('data', m => receive(m, 'p2p'));
   c.on('close', () => { if (conn === c) conn = null; scheduleRetry(); });
 }
 function scheduleRetry() { clearTimeout(retryTimer); retryTimer = setTimeout(() => { if (peer && !peer.destroyed && peer.open && !(conn && conn.open)) connectToHost(); }, 5000); }
@@ -699,8 +715,7 @@ function loadOrNew() {
 $('createBtn').onclick = () => {
   ac();
   room = Math.random().toString(36).slice(2, 8);
-  store.set('bq-host-' + room, '1');
-  history.replaceState(null, '', '?room=' + room);
+  history.replaceState(null, '', '?room=' + room + '&host=' + Math.random().toString(36).slice(2, 10));
   boot();
 };
 $('localBtn').onclick = () => { ac(); history.replaceState(null, '', '?local=1'); boot(); };
@@ -716,7 +731,7 @@ function boot() {
   const q = new URLSearchParams(location.search);
   room = q.get('room');
   if (q.get('local')) { mode = 'local'; loadOrNew(); }
-  else if (room && store.get('bq-host-' + room)) { mode = 'host'; loadOrNew(); }
+  else if (room && q.get('host')) { mode = 'host'; loadOrNew(); }
   else if (room) { mode = 'guest'; state = null; }
   else return;
   enterGame();
