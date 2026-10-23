@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant">
+<script>(function(){try{var th=localStorage.getItem('bq-theme');if(th==='dark'||(!th&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})()</script>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -19,6 +20,14 @@
     --wood-1: #d8a35f; --wood-2: #c48a45; --wood-3: #a8702f; --grid: rgba(78, 42, 12, .55);
     --kai: "LXGW WenKai TC", "BiauKai", "KaiTi", "STKaiti", "Kaiti TC", "Noto Serif TC", serif;
   }
+  :root.dark {
+    --bg: #16120e; --surface: rgba(255, 244, 225, .055); --line: rgba(255, 236, 205, .13); --tint: rgba(255, 244, 225, .06);
+    --card: #261e17; --field: #1d1712; --ink: #f4ead9; --muted: #a8998a; --gold: #e0ad52; --gold-soft: rgba(224, 173, 82, .18);
+  }
+  :root.dark body { background: radial-gradient(1200px 600px at 50% -10%, #3a2a1a 0%, transparent 60%), radial-gradient(800px 500px at 100% 100%, #2a1d12 0%, transparent 60%), var(--bg); }
+  :root.dark button:hover { background: rgba(255, 244, 225, .09); border-color: rgba(255, 236, 205, .3); }
+  :root.dark .player .av.b { box-shadow: 0 0 0 3px #e9dfcc, 0 0 14px rgba(240, 230, 210, .35); }
+  :root.dark .brand .zh { text-shadow: 0 2px 12px rgba(224, 173, 82, .35); }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html { background: var(--bg); }
   /* effects fly past the edges; never let them widen the page (phones would re-zoom and resize the board) */
@@ -174,7 +183,7 @@
   table.ranks td.k { font-family: var(--kai); font-size: 20px; }
 
   /* overlay */
-  #overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(10, 7, 4, .6); backdrop-filter: blur(3px); z-index: 50; animation: fade .3s both; padding: 16px; }
+  #overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(10, 7, 4, .6); z-index: 50; animation: fade .3s both; padding: 16px; }
   #overlay .card { background: var(--card); border: 1px solid rgba(224, 173, 82, .5); border-radius: 20px; padding: 28px 30px; text-align: center; max-width: 360px; width: 100%; box-shadow: 0 30px 80px rgba(0, 0, 0, .6); animation: rise .5s cubic-bezier(.2, 1.4, .4, 1) both; }
   #overlay h2 { font-family: var(--kai); font-size: 40px; margin: 0 0 6px; color: var(--gold); letter-spacing: 2px; }
   #overlay p { color: var(--muted); margin: 0 0 20px; }
@@ -285,6 +294,53 @@
   #brand { cursor: pointer; }
   @keyframes wiggle { 0%, 100% { transform: rotate(0) scale(1); } 25% { transform: rotate(-9deg) scale(1.06); } 50% { transform: rotate(0) scale(.96); } 75% { transform: rotate(9deg) scale(1.06); } }
   .sticker-show .wiggle { animation: wiggle .5s ease-in-out 4 .35s; transform-origin: 50% 90%; }
+  /* chat card modes, phone bottom bar + sheet, dialogs */
+  .modes { display: flex; gap: 6px; margin-bottom: 8px; }
+  .modes button { flex: 1; padding: 6px 8px; font-size: 14px; position: relative; }
+  .modes button.on, .actbar button.on { background: var(--gold); color: #fff; border-color: var(--gold); }
+  #chatCard:not([data-mode=chat]) #chatLog, #chatCard:not([data-mode=chat]) #chatForm, #chatCard:not([data-mode=chat]) #chanRow { display: none !important; }
+  .dot-badge { position: absolute; top: 4px; right: 8px; width: 9px; height: 9px; border-radius: 50%; background: #e0402e; box-shadow: 0 0 0 2px var(--card); }
+  .sheet-handle, .actbar, #homeBtn .short { display: none; }
+  .tray-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .tray-tabs::-webkit-scrollbar { display: none; }
+  .tray-tabs button { flex: none; }
+  .invite-btn { padding: 3px 12px; font-size: 13px; margin-top: 3px; }
+  #cfgDlg { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(10, 7, 4, .45); z-index: 91; padding: 16px; animation: fade .2s both; }
+  #cfgDlg .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 18px 20px; max-width: 420px; width: 100%; box-shadow: 0 30px 80px rgba(0, 0, 0, .4); }
+  #cfgDlg h3 { margin: 0 0 12px; font-size: 17px; }
+  @media (max-width: 999px) {
+    body.ingame.has-bar main { padding-bottom: 64px; }
+    .actbar:not(.hidden) { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; gap: 6px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+      background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -6px 20px rgba(0, 0, 0, .12); }
+    .actbar button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 5px 4px; border-radius: 14px; font-size: 20px; line-height: 1.2; position: relative; }
+    .actbar button span { font-size: 11px; color: var(--muted); }
+    .actbar button.on span { color: #fff; }
+    #chatCard { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; margin: 0; border-radius: 20px 20px 0 0; max-height: 64vh; display: flex; flex-direction: column;
+      padding-top: 6px; padding-bottom: calc(80px + env(safe-area-inset-bottom)); background: var(--card); box-shadow: 0 -10px 40px rgba(0, 0, 0, .25);
+      transform: translateY(calc(100% + 120px)); transition: transform .28s cubic-bezier(.2, .8, .2, 1); }
+    .game-panel #gameBtns { display: grid !important; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .game-panel #gameBtns button { padding: 14px 10px; font-size: 16px; }
+    .game-panel #gameBtns #inviteBtn { grid-column: 1 / -1; }
+    body.sheet-open #chatCard { transform: translateY(0); }
+    #chatCard .modes { display: none; }
+    .sheet-handle { display: block; flex: none; width: 60px; height: 22px; margin: 0 auto 6px; cursor: pointer; position: relative; }
+    .sheet-handle::after { content: ""; position: absolute; left: 8px; right: 8px; top: 8px; height: 5px; border-radius: 3px; background: var(--line); }
+    #chatCard #reacts { display: none; }
+    #chatCard[data-mode=emoji] #reacts { display: flex; justify-content: center; }
+    #chatCard[data-mode=emoji] .reacts button { font-size: 26px; padding: 6px 12px; }
+    #chatCard #chatLog { flex: 1; max-height: none; min-height: 140px; }
+    #chatCard .tray-grid { max-height: 36vh; }
+    #sheetBack:not(.hidden) { position: fixed; inset: 0; z-index: 44; background: rgba(0, 0, 0, .25); }
+    #homeBtn .long { display: none; } #homeBtn .short { display: inline; }
+    #homeBtn { width: 38px; padding: 0; }
+  }
+  @media (min-width: 1000px) {
+    .col-side .tray-grid { max-height: none; flex: 1; }
+    .col-side #tray:not(.hidden), .col-side #tauntPanel:not(.hidden) { flex: 1; min-height: 0; overflow-y: auto; }
+  }
+  .pw-row input { font: inherit; font-size: 14px; color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; width: 140px; }
+  /* moving things get their own GPU layer so phones don't repaint the page while they animate */
+  .sticker-show, .dancer, .flyer, .say, .emo, .confetti, .shard, .banner, .pop { will-change: transform, opacity; }
   #toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); background: #2c2219; border: 1px solid var(--line); color: #f4ead9; padding: 9px 16px; border-radius: 999px; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; z-index: 70; max-width: calc(100% - 32px); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
@@ -314,7 +370,9 @@
   <div class="top">
     <div class="brand" id="brand"><span class="zh">暗棋</span></div>
     <div class="tools">
-      <button id="homeBtn" class="hidden">← 回大廳</button>
+      <button id="homeBtn" class="hidden" title="回大廳"><span class="long">← 回大廳</span><span class="short">←</span></button>
+      <button class="icon hidden" id="cfgBtn" title="房間設定">⚙️</button>
+      <button class="icon" id="themeBtn" title="深色／淺色"></button>
       <button class="icon" id="animBtn" title="動畫效果開／關" aria-label="動畫效果">✨</button>
       <button class="icon" id="soundBtn" aria-label="Sound"></button>
       <button class="icon" id="rulesBtn" aria-label="Rules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></button>
@@ -361,16 +419,15 @@
 
     </div>
     <aside class="col-side">
-    <div class="panel room-cfg hidden" id="roomCfg">
-      <label><input type="checkbox" id="cfgLobby"> 公開到大廳</label>
-      <label>觀戰 <select id="cfgWatch"><option value="off">不開放</option><option value="board">只看棋盤</option><option value="fun">棋盤＋貼圖嘲諷</option><option value="chat">再加公開聊天</option></select></label>
-      <button type="button" id="watchLinkBtn">複製觀戰連結</button>
-    </div>
-    <div class="panel" id="chatCard">
+
+    <div class="panel" id="chatCard" data-mode="chat">
+      <div class="sheet-handle" id="sheetHandle"></div>
+      <div class="modes" id="modeTabs"><button type="button" data-m="chat" id="chatTabBtn" class="on">💬 聊天<i class="dot-badge hidden"></i></button><button type="button" data-m="sticker" id="trayBtn">🖼️ 貼圖</button><button type="button" data-m="taunt" id="tauntBtn">😏 嘲諷</button></div>
       <div class="reacts" id="reacts"></div>
+      <div class="game-panel hidden" id="gamePanel"></div>
       <div class="taunts hidden" id="tauntPanel">
         <h4>語音嘲諷（對方會聽到）</h4><div class="chips" id="tauntChips"></div>
-        <h4>音效板</h4><div class="chips" id="boardChips"></div>
+        <h4>音效板 <span class="muted" style="font-weight:400">（音效 via MyInstants）</span></h4><div class="chips" id="boardChips"></div>
         <div class="chips"><button type="button" id="bragBtn">🏆 炫耀戰利品</button></div>
       </div>
       <div class="tray hidden" id="tray">
@@ -379,8 +436,7 @@
         <div class="muted tray-hint hidden" id="linkHint">在 Tenor 或 Giphy 長按（電腦按右鍵）圖片 →「複製圖片網址」，貼到上面就會加進來，而且會動。</div>
         <div class="tray-grid" id="trayGrid"></div>
         <div class="credit hidden" id="tenorCredit">GIF via Tenor</div>
-        <div class="muted tray-hint">點「＋」可以從相簿加入自己的貼圖；朋友傳來的圖也會自動收藏在這裡。</div>
-        <input type="file" id="stickerFile" accept="image/*" hidden>
+        <div class="muted tray-hint">為了隱私，不能從相簿上傳照片；想加新梗圖就到「我的」貼上 Tenor / Giphy 的圖片網址。</div>
       </div>
       <div id="chatLog"></div>
       <div class="chan hidden" id="chanRow"><button type="button" data-ch="priv" class="on">🔒 私人</button><button type="button" data-ch="pub">📢 公開</button></div>
@@ -399,21 +455,31 @@
   </section>
 </main>
 <div id="fxTop"></div>
+<div id="sheetBack" class="hidden"></div>
+<nav class="actbar hidden" id="actbar"><button type="button" data-m="emoji">😀<span>表情</span></button><button type="button" data-m="sticker">🖼️<span>貼圖</span></button><button type="button" data-m="taunt">😏<span>嘲諷</span></button><button type="button" data-m="chat">💬<span>聊天</span><i class="dot-badge hidden"></i></button><button type="button" data-m="game">⋯<span>更多</span></button></nav>
 <div id="party"></div>
+<div id="cfgDlg" class="hidden"><div class="card"><h3>房間設定</h3>
+<div class="room-cfg hidden" id="roomCfg">
+      <label><input type="checkbox" id="cfgLobby"> 公開到大廳</label>
+      <label>觀戰 <select id="cfgWatch"><option value="off">不開放</option><option value="board">只看棋盤</option><option value="fun">棋盤＋貼圖嘲諷</option><option value="chat">再加公開聊天</option></select></label>
+      <label class="pw-row">房間密碼 <input type="text" id="cfgPw" maxlength="20" placeholder="不設就留空" autocomplete="off"></label><button type="button" id="cfgPwSave">儲存密碼</button>
+      <button type="button" id="watchLinkBtn">複製觀戰連結</button>
+    </div>
+<div class="row" style="justify-content:flex-end;margin-top:14px"><button class="primary" id="cfgClose">好了</button></div></div></div>
 <div id="brag" class="hidden"></div>
 <div id="quick" class="hidden"></div>
-<div id="prof" class="hidden"><div class="card"><h3>你的名字和頭像</h3><input id="profName" maxlength="12" placeholder="名字（最多 12 個字）" autocomplete="off"><div class="av-grid" id="avGrid"></div><div class="row" style="justify-content:flex-end"><button class="primary" id="profSave">好了</button></div></div></div>
+<div id="prof" class="hidden"><div class="card"><h3>你的名字和頭像</h3><input id="profName" maxlength="12" placeholder="名字（最多 12 個字）" autocomplete="off"><p class="muted" style="font-size:12px;margin:-4px 0 10px">名字會顯示給對手、觀眾和大廳，建議用暱稱，不要用真實姓名。</p><div class="av-grid" id="avGrid"></div><div class="row" style="justify-content:flex-end"><button class="primary" id="profSave">好了</button></div></div></div>
 <div id="ask" class="hidden"><div class="card"><p id="askText"></p><div class="row"><button class="primary" id="askYes"></button><button id="askNo"></button></div></div></div>
-<div class="ver">版本 14</div>
+<div class="ver">版本 16</div>
 <div id="overlay" class="hidden"><div class="card"><div class="stamp" id="ovStamp"></div><h2 id="ovTitle"></h2><p id="ovReason"></p><div class="row"><button class="primary" id="ovAgain" data-t="again"></button><button id="ovClose" data-t="close"></button></div></div></div>
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
-<script src="logic.js?v=14"></script>
-<script src="stickers.js?v=14"></script>
+<script src="logic.js?v=16"></script>
+<script src="stickers.js?v=16"></script>
 <script>
-const APP_VER = '14';
+const APP_VER = '16';
 (function checkVersion() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.text() : '')).then(v => {
     v = v.trim();
@@ -613,7 +679,8 @@ function fitBoard(force) {
   const pad = portrait ? 14 + 12 : 24 + 16;
   const colW = document.querySelector('.col-main').clientWidth || document.querySelector('main').clientWidth;
   const availW = Math.min(colW, 980) - pad;
-  const availH = innerHeight - (portrait ? 230 : 330);   // header + players + status + bottom row
+  const bar = innerWidth < 1000 && (mode === 'host' || mode === 'guest') ? 88 : 0;
+  const availH = innerHeight - (portrait ? 238 : 330) - bar;   // header + players + status + bottom row
   const cell = Math.max(38, Math.floor(Math.min(availW / cols, portrait ? availH / rows : Math.min(110, availH / rows))));
   $('board').style.setProperty('--cell', cell + 'px');
   $('board').classList.toggle('portrait', portrait);
@@ -666,7 +733,10 @@ function render(animate = true) {
   else if (animate) playSound(prev);
   prev = state;
   document.title = (mode !== 'local' && myTurn && document.hidden) ? t('titleTurn') : '暗棋對戰';
-  if (state.winner && shownOver !== state.gid + ':' + state.moveNo) { shownOver = state.gid + ':' + state.moveNo; setTimeout(showOver, animate ? 700 : 0); }
+  if (state.winner && shownOver !== state.gid + ':' + state.moveNo) {
+    shownOver = state.gid + ':' + state.moveNo;
+    if (store.get('bq-over') !== shownOver) { store.set('bq-over', shownOver); setTimeout(showOver, animate ? 700 : 0); }   // once per finished game, not on every reload
+  }
   if (!state.winner && !$('overlay').classList.contains('hidden')) hideOver();
   updateButtons();
   trackTurn();
@@ -941,6 +1011,13 @@ function renderPlayers() {
   fill($('pMe'), meRole, local ? t('p1') : myName(), local ? 'n-8' : profile.av);
   fill($('pOpp'), oppRole, local ? t('p2') : oppName(), local ? 'n-17' : (oppProfile && oppProfile.av) || 'm-smug');
   $('pMe').classList.toggle('editable', !local);
+  // before the friend arrives, the friend's card says so and carries the invite button
+  const waiting = mode === 'host' && !everJoined && !oppProfile;
+  let inv = $('pOpp').querySelector('.invite-btn');
+  if (waiting) {
+    $('pOpp').querySelector('.who').textContent = '等朋友加入…';
+    if (!inv) { inv = document.createElement('button'); inv.type = 'button'; inv.className = 'invite-btn primary'; inv.textContent = '邀請朋友'; inv.onclick = e => { e.stopPropagation(); shareInvite(); }; $('pOpp').querySelector('.who').after(inv); }
+  } else if (inv) inv.remove();
 }
 
 function renderStatus() {
@@ -1054,7 +1131,7 @@ const freshGame = first => Object.assign(B.newGame(first), { gid: rid() });
 
 // ---------- emoji reactions ----------
 const EMOJI = ['👍', '😂', '😱', '🔥', '😭', '🙏', '😎', '🤯'];
-$('reacts').innerHTML = EMOJI.map(e => `<button type="button" data-e="${e}">${e}</button>`).join('') + '<button type="button" class="tray-btn" id="trayBtn">貼圖</button><button type="button" class="tray-btn" id="tauntBtn">嘲諷</button>';
+$('reacts').innerHTML = EMOJI.map(e => `<button type="button" data-e="${e}">${e}</button>`).join('');
 let lastReact = 0;
 $('reacts').onclick = e => {
   const b = e.target.closest('button'); if (!b || !b.dataset.e || Date.now() - lastReact < 350) return;
@@ -1086,7 +1163,7 @@ const IMG_RE = /^data:image\/(png|webp|jpeg|gif);base64,[A-Za-z0-9+/=]+$/;
 const LINK_RE = /^https:\/\/(media\d?\.tenor\.com|c\.tenor\.com|media\d?\.giphy\.com|i\.giphy\.com)\/[A-Za-z0-9_\-\/.%~]{5,300}$/;
 const okCustom = u => typeof u === 'string' && (IMG_RE.test(u) || LINK_RE.test(u));
 let customs = [];
-try { customs = (JSON.parse(store.get(STK_KEY)) || []).filter(okCustom); } catch (_) {}
+try { customs = (JSON.parse(store.get(STK_KEY)) || []).filter(u => typeof u === 'string' && LINK_RE.test(u)); } catch (_) {}   // album photos from older versions are dropped
 let lastSticker = 0;
 function saveCustoms() {
   while (customs.length) { try { localStorage.setItem(STK_KEY, JSON.stringify(customs)); return; } catch (_) { customs.pop(); } }
@@ -1127,65 +1204,80 @@ function renderTray() {
   $('linkForm').classList.toggle('hidden', trayGroup !== 'mine');
   $('linkHint').classList.toggle('hidden', trayGroup !== 'mine');
   $('trayGrid').innerHTML = trayGroup === 'mine'
-    ? '<button type="button" class="stk add" data-add="1" title="加入自己的貼圖">＋</button>' +
-      customs.map((u, k) => `<div class="stk" data-c="${k}"><img src="${u}" alt=""><span class="del" data-del="${k}">×</span></div>`).join('')
+    ? customs.map((u, k) => `<div class="stk" data-c="${k}"><img src="${u}" alt=""><span class="del" data-del="${k}">×</span></div>`).join('')
     : tabStickers(trayGroup).map(x => `<div class="stk" data-id="${x.id}" title="${x.name}">${stkArt(x)}</div>`).join('');
 }
 $('trayTabs').onclick = e => { const b = e.target.closest('button'); if (b) { trayGroup = b.dataset.g; renderTray(); } };
-// 貼圖 and 嘲諷 are tabs: opening one closes the other; pressing the open one closes it
-function openPanel(which) {
-  const open = which && $(which).classList.contains('hidden') ? which : null;
-  ['tray', 'tauntPanel'].forEach(id => $(id).classList.toggle('hidden', id !== open));
-  $('trayBtn').classList.toggle('on', open === 'tray'); $('tauntBtn').classList.toggle('on', open === 'tauntPanel');
-  if (open === 'tray') renderTray();
-  if (open) $(open).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+// The chat card shows one thing at a time: chat, stickers or taunts (plus emoji on phones).
+// Wide screens: tabs at the top of the right column. Phones: a sheet that slides up from the bottom bar.
+let chatMode = 'chat', sheetOpen = false;
+const wideMQ = matchMedia('(min-width: 1000px)');
+function setMode(m) {
+  chatMode = m;
+  $('chatCard').dataset.mode = m;
+  $('tray').classList.toggle('hidden', m !== 'sticker');
+  $('tauntPanel').classList.toggle('hidden', m !== 'taunt');
+  $('gamePanel').classList.toggle('hidden', m !== 'game');
+  document.querySelectorAll('#modeTabs [data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+  document.querySelectorAll('#actbar [data-m]').forEach(b => b.classList.toggle('on', sheetOpen && b.dataset.m === m));
+  if (m === 'sticker') renderTray();
+  if (m === 'chat' && (wideMQ.matches || sheetOpen)) { setBadge(false); $('chatLog').scrollTop = 1e9; }
 }
-$('trayBtn').onclick = () => openPanel('tray');
+function openSheet(m) {
+  if (sheetOpen && chatMode === m) { closeSheet(); return; }
+  sheetOpen = true;
+  document.body.classList.add('sheet-open');
+  $('sheetBack').classList.remove('hidden');
+  setMode(m);
+}
+function closeSheet() {
+  sheetOpen = false;
+  document.body.classList.remove('sheet-open');
+  $('sheetBack').classList.add('hidden');
+  setMode(chatMode);
+}
+function setBadge(on) { document.querySelectorAll('#chatTabBtn .dot-badge, #actbar .dot-badge').forEach(d => d.classList.toggle('hidden', !on)); }
+const chatVisible = () => chatMode === 'chat' && (wideMQ.matches || sheetOpen);
+$('modeTabs').onclick = e => { const b = e.target.closest('[data-m]'); if (b) setMode(b.dataset.m !== 'chat' && chatMode === b.dataset.m ? 'chat' : b.dataset.m); };
+$('actbar').onclick = e => { const b = e.target.closest('[data-m]'); if (b) openSheet(b.dataset.m); };
+$('sheetBack').onclick = closeSheet;
+$('sheetHandle').onclick = closeSheet;
+let sheetY = null;
+$('sheetHandle').addEventListener('touchstart', e => { sheetY = e.touches[0].clientY; }, { passive: true });
+$('sheetHandle').addEventListener('touchend', e => { if (sheetY != null && e.changedTouches[0].clientY - sheetY > 40) closeSheet(); sheetY = null; });
+// phones: the game buttons (催 / 悔棋 / 認輸 / 重新開局) live in the "更多" sheet so the board fits above the bar
+function placeGameBtns() {
+  const btns = $('gameBtns'), home = $('audInfo');
+  if (wideMQ.matches) { if (btns.parentElement !== home.parentElement) home.after(btns); }
+  else if (btns.parentElement !== $('gamePanel')) $('gamePanel').appendChild(btns);
+}
+placeGameBtns();
+wideMQ.addEventListener('change', () => { placeGameBtns(); if (wideMQ.matches && sheetOpen) closeSheet(); });
+// which bottom-bar buttons make sense for this seat
+function updateActbar() {
+  const player = mode === 'host' || mode === 'guest', watcherChat = mode === 'watch' && lvl === 'chat';
+  $('actbar').classList.toggle('hidden', !(player || watcherChat));
+  document.body.classList.toggle('has-bar', player || watcherChat);
+  document.querySelectorAll('#actbar [data-m]').forEach(b => b.classList.toggle('hidden', !player && b.dataset.m !== 'chat'));
+  placeGameBtns();
+  document.querySelectorAll('#modeTabs [data-m]').forEach(b => b.classList.toggle('hidden', !player && b.dataset.m !== 'chat'));
+}
 $('trayGrid').onclick = e => {
-  if (e.target.closest('[data-add]')) { $('stickerFile').click(); return; }
   const del = e.target.closest('[data-del]');
   if (del) { customs.splice(+del.dataset.del, 1); saveCustoms(); renderTray(); return; }
   const el = e.target.closest('.stk');
   if (!el) return;
-  if (!online()) { toast(t('waiting')); return; }
+  previewNote();
   if (Date.now() - lastSticker < 1000) return;
   lastSticker = Date.now();
   const cu = customs[+el.dataset.c];
-  const msg = el.dataset.id ? { type: 'sticker', sid: el.dataset.id } : IMG_RE.test(cu) ? { type: 'sticker', img: cu } : { type: 'sticker', url: cu };
+  const msg = el.dataset.id ? { type: 'sticker', sid: el.dataset.id } : { type: 'sticker', url: cu };
   send(msg);
   showSticker(msg, true);
 };
-$('stickerFile').onchange = e => {
-  const f = e.target.files[0];
-  e.target.value = '';
-  if (f) shrinkImage(f).then(u => { keepCustom(u); trayGroup = 'mine'; renderTray(); toast('已加入貼圖'); }, () => toast('這張圖讀不到，換一張試試'));
-};
-// Shrink to at most ~220px and ~60 KB so it travels fast on both channels.
-function shrinkImage(file) {
-  return new Promise((res, rej) => {
-    const img = new Image(), src = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(src);
-      let size = 220, url = '';
-      for (;;) {
-        const r = Math.min(1, size / Math.max(img.width, img.height)), c = document.createElement('canvas');
-        c.width = Math.max(1, Math.round(img.width * r)); c.height = Math.max(1, Math.round(img.height * r));
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        url = c.toDataURL('image/webp', .82);
-        if (!url.startsWith('data:image/webp')) url = c.toDataURL('image/png');
-        if (url.length < 60000 || size <= 100) break;
-        size -= 40;
-      }
-      IMG_RE.test(url) ? res(url) : rej();
-    };
-    img.onerror = () => { URL.revokeObjectURL(src); rej(); };
-    img.src = src;
-  });
-}
 function showSticker(m, mine) {
   let html;
   if (m.sid) { const x = STICKERS.find(k => k.id === m.sid); if (!x) return; html = stkArt(x); if (!/^https:/.test(x.img || '')) html = html.replace(/^<(img|svg)/, '<$1 class="wiggle"'); }
-  else if (typeof m.img === 'string' && m.img.length < 100000 && IMG_RE.test(m.img)) { html = `<img class="wiggle" src="${m.img}" alt="">`; if (!mine && mode !== 'watch') keepCustom(m.img); }
   else if (typeof m.url === 'string' && LINK_RE.test(m.url)) { html = `<img src="${m.url}" alt="">`; if (!mine && mode !== 'watch') keepCustom(m.url); }
   else return;
   sfx.boing();
@@ -1386,13 +1478,46 @@ function hideOver() {
 // ---------- taunts ----------
 // Fixed phrases only (by index), so nobody can make the other phone read out arbitrary text.
 const TAUNTS = ['就這？', '你在想什麼', '謝謝招待', '我等到睡著了', '這步好棒棒', '下棋要用腦喔', '認輸吧', '你是不是在放水', '太簡單了吧', '哈哈哈哈哈', '將軍拿下！', '快點啦！'];
-const BOARD = [['😂 罐頭笑聲', 'laugh'], ['🎺 悲傷長號', 'trombone'], ['🥁 蹦蹦嚓', 'rimshot'], ['🦟 蚊子嗡嗡', 'mosquito']];
+// Popular meme sounds, played straight from MyInstants (their files, linked, not copied here).
+const BOARD = [['💥 Vine Boom', 'vine-boom'], ['😑 Bruh', 'movie_1'], ['😱 FAAAH', 'faaah'], ['📯 空氣喇叭', 'mlg-airhorn'], ['💀 情感傷害', 'emotional-damage-meme'],
+  ['🎺 悲傷長號', 'sadtrombone.swf'], ['🥁 蹦蹦嚓', 'rimshot'], ['🦗 冷場蟋蟀', 'crickets'], ['🎻 悲傷小提琴', 'tf_nemesis'], ['😹 貓咪狂笑', 'cat-laugh-meme-1'],
+  ['😲 震驚', 'shocked-sound-effect'], ['🔩 鋼管落地', 'gang-guan-luo-di'], ['💪 館長', 'guan-chang'], ['🐔 乾林涼勒', 'gan-lin-liang-le-shui-da-lai-la'],
+  ['🧽 海綿寶寶失敗', 'spongebob-fail'], ['🔪 Among Us', 'among-us-role-reveal-sound'], ['❌ 系統錯誤', 'windows-xp-error'], ['💨 放屁', 'dry-fart']];
+const boardUrl = k => `https://www.myinstants.com/media/sounds/${BOARD[k][1]}.mp3`;
+// One shared <audio> player. MyInstants files can't go through Web Audio (no CORS), and phones only let a page play
+// audio after a tap, so the player is "unlocked" on the first tap and reused for every sound afterwards.
+const boardPlayer = new Audio();
+boardPlayer.preload = 'auto';
+addEventListener('pointerdown', function unlockBoard() {
+  removeEventListener('pointerdown', unlockBoard);
+  boardPlayer.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+  boardPlayer.play().then(() => boardPlayer.pause(), () => {});
+});
+let boardStop = null;
+function playBoardSound(k) {
+  if (muted) return;
+  clearTimeout(boardStop);
+  try {
+    boardPlayer.pause();
+    boardPlayer.src = boardUrl(k);
+    boardPlayer.currentTime = 0;
+    boardPlayer.volume = .9;
+    const pr = boardPlayer.play();
+    if (pr) pr.catch(() => toast('點一下畫面就能聽到音效'));
+    boardStop = setTimeout(() => boardPlayer.pause(), 6000);   // long clips stop after 6 s
+  } catch (_) {}
+}
 $('tauntChips').innerHTML = TAUNTS.slice(0, 10).map((x, k) => `<button type="button" data-k="${k}">${x}</button>`).join('');
 $('boardChips').innerHTML = BOARD.map(([label], k) => `<button type="button" data-b="${k}">${label}</button>`).join('');
-$('tauntBtn').onclick = () => openPanel('tauntPanel');
 let lastTaunt = 0;
+// Before the friend arrives you can still try taunts / sounds / stickers: they play on your own screen only.
+function previewNote() {
+  if (online() || previewNote.done) return;
+  previewNote.done = true;
+  toast('朋友還沒加入，先自己試試；他加入後按的才會傳過去', 3500);
+}
 function okToSend() {
-  if (!online()) { toast(t('waiting')); return false; }
+  previewNote();
   if (Date.now() - lastTaunt < 1200) return false;
   lastTaunt = Date.now();
   return true;
@@ -1462,7 +1587,7 @@ function sayTaunt(k, mine) {
 }
 function playBoard(k, mine) {
   if (!Number.isInteger(k) || !BOARD[k]) return;
-  sfx[BOARD[k][1]]();
+  playBoardSound(k);
   say(BOARD[k][0], mine);
 }
 
@@ -1566,6 +1691,7 @@ function addChat(who, text, pub, name, side) {   // side: 'me' | 'opp' shows it 
   d.appendChild(document.createTextNode(text));
   $('chatLog').appendChild(d); $('chatLog').scrollTop = 1e9;
   if (side) say(text, side === 'me', true);
+  if (who !== 'me' && !chatVisible()) setBadge(true);
   if (who !== 'me') { if (!side) toast('💬 ' + (pub && name ? name + '：' : '') + text, 3500); knock(3000, .03, .2); knock(3400, .03, .2, .08); }
 }
 $('chatForm').onsubmit = e => {
@@ -1573,7 +1699,7 @@ $('chatForm').onsubmit = e => {
   const v = $('chatInput').value.trim().slice(0, 200); if (!v) return;
   if (mode === 'watch' || chan === 'pub') {
     if (lvl !== 'chat' || !mq || !mq.connected) { toast('公開聊天沒有開放'); return; }
-    mq.publish(topic('pub'), JSON.stringify({ type: 'pub', id: rid(), w: myId, n: myName(), r: mode, text: v }), { qos: 1 });
+    mq.publish(pubTopic(), JSON.stringify({ type: 'pub', id: rid(), w: myId, n: myName(), r: mode, text: v }), { qos: 1 });
     addChat('me', v, true, myName(), mode === 'watch' ? null : 'me'); $('chatInput').value = '';
     return;
   }
@@ -1606,8 +1732,8 @@ const deadGids = new Set();
 const syncReq = type => send({ type, gid: state ? state.gid : null, seq: state ? state.seq : -1 });
 function send(msg) {
   msg.id = rid();
-  if (mode === 'guest') msg.from = myId;
-  if (mode === 'host' && msg.type === 'ping') { msg.lvl = cfg.watch; msg.aud = audN; }
+  if (mode === 'guest') { msg.from = myId; if (roomKey) msg.k = roomKey; }
+  if (mode === 'host' && msg.type === 'ping') { msg.lvl = cfg.watch; msg.aud = audN; msg.rk = cfg.key || ''; }   // the seated guest learns the current key
   if (mode === 'host' && FWD.includes(msg.type)) pubWatchEv('host', msg);
   if (mode !== 'local' && (msg.type === 'ping' || msg.type === 'hello' || msg.type === 'profile')) msg.pf = myPf();
   if (conn && conn.open) { try { conn.send(msg); } catch (_) {} }
@@ -1618,7 +1744,8 @@ function setConn(text, kind) {
   setConn.v = text + kind;
   $('conn').innerHTML = `<span class="dot ${kind || ''}"></span>${text}`;
   if (kind === 'on') everJoined = true;
-  $('shareRow').classList.toggle('hidden', mode !== 'host' || everJoined);
+  $('shareRow').classList.add('hidden');
+  if (kind === 'on' && state && !renderPlayers.joined) { renderPlayers.joined = true; renderPlayers(); }
   $('inviteBtn').classList.toggle('hidden', mode !== 'host' || !everJoined);
 }
 let everJoined = false;
@@ -1637,7 +1764,9 @@ function receive(m, ch) {
   if (ch) heard[ch] = Date.now();
   if (!m || typeof m !== 'object' || !m.id || seen.has(m.id)) return;
   seen.add(m.id);
-  if (mode === 'host' && m.from && !acceptGuest(m.from)) { send({ type: 'full', to: m.from }); return; }
+  if (mode === 'host' && m.from) { const g = acceptGuest(m.from, m.k); if (g !== true) { send({ type: g, to: m.from }); return; } }
+  if (mode === 'guest' && m.type === 'badpw') { if (m.to === myId) needPassword('密碼不對，請再輸入一次'); return; }
+  if (mode === 'guest' && typeof m.rk === 'string' && m.rk !== roomKey) setRoomKey(m.rk);
   if (mode === 'guest' && m.type === 'full') { if (m.to === myId) roomFull(); return; }
   if (mode === 'guest' && m.lvl) { if (lvl !== m.lvl) { lvl = m.lvl; updateAudInfo(); } }
   if (mode === 'guest' && typeof m.aud === 'number' && m.aud !== audN) { audN = m.aud; updateAudInfo(); }
@@ -1697,18 +1826,18 @@ function startRelay(k = 0) {
   let ok = false;
   c.on('connect', () => {
     ok = true; mq = c;
-    if (mode === 'watch') c.subscribe([topic('watch'), topic('pub')], { qos: 1 });
-    else c.subscribe([topic(mode), topic('pub')].concat(mode === 'host' ? [topic('aud')] : []), { qos: 1 });
+    if (mode === 'watch') c.subscribe([watchTopic(), pubTopic()], { qos: 1 });
+    else c.subscribe([topic(mode), pubTopic()].concat(mode === 'host' ? [audTopic()] : []), { qos: 1 });
     if (mode === 'guest') syncReq('hello');
     if (mode === 'host') { pubWatch.on = true; pubWatch(); pubLobby(true); }
     if (mode === 'watch') audPing();
   });
   c.on('message', (tp, payload) => {
     const raw = payload.toString();
-    if (tp.endsWith('/watch')) { if (!raw) onWatch(null); else try { onWatch(JSON.parse(raw)); } catch (_) {} return; }
+    if (tp === watchTopic()) { if (!raw) onWatch(null); else try { onWatch(JSON.parse(raw)); } catch (_) {} return; }
     let m; try { m = JSON.parse(raw); } catch (_) { return; }
-    if (tp.endsWith('/aud')) onAud(m);
-    else if (tp.endsWith('/pub')) onPub(m);
+    if (tp === audTopic()) onAud(m);
+    else if (tp === pubTopic()) onPub(m);
     else receive(m, 'relay');
   });
   const retry = () => { if (mq === c) mq = null; c.end(true); setTimeout(() => startRelay(ok ? k : k + 1), ok ? 1500 : 500); };
@@ -1723,7 +1852,7 @@ function startP2P() {
     peer = new Peer(hostId(), PEER_OPTS);
     peer.on('connection', c => {
       c.on('data', m => {
-        if (m && m.from && !acceptGuest(m.from)) { try { c.send({ type: 'full', to: m.from, id: rid() }); } catch (_) {} setTimeout(() => c.close(), 300); return; }
+        if (m && m.from) { const g = acceptGuest(m.from, m.k); if (g !== true) { try { c.send({ type: g, to: m.from, id: rid() }); } catch (_) {} setTimeout(() => c.close(), 300); return; } }
         conn = c; receive(m, 'p2p');
       });
       c.on('close', () => { if (conn === c) conn = null; });
@@ -1767,6 +1896,54 @@ document.addEventListener('visibilitychange', () => {
 });
 addEventListener('pageshow', () => { if (mode === 'guest') syncReq('hello'); });
 
+// ---------- room password ----------
+// The password itself never leaves the host's browser: everyone uses a key = hash(room + password).
+// The key is checked when someone new takes the seat, and it is part of the spectator / public-chat channel names,
+// so without it you cannot even find those channels.
+let roomKey = '';
+const wordSafe = v => String(v || '').trim().slice(0, 20);
+async function hashKey(r, pw) {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(r + '|' + pw));
+  return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+}
+const keySuffix = () => (roomKey ? '-' + roomKey : '');
+const watchTopic = () => topic('watch' + keySuffix()), pubTopic = () => topic('pub' + keySuffix()), audTopic = () => topic('aud' + keySuffix());
+async function askKey(r) {
+  const pw = prompt('這個房間有密碼，請輸入：');
+  if (pw === null || !wordSafe(pw)) return null;
+  return hashKey(r, wordSafe(pw));
+}
+function needPassword(msg) {
+  if (needPassword.shown) return;
+  needPassword.shown = true;
+  setConn('需要密碼', 'wait');
+  $('status').innerHTML = '';
+  $('status').append(msg + ' ');
+  const b = document.createElement('a'); b.href = '#'; b.textContent = '輸入密碼'; b.style.color = 'var(--gold)';
+  b.onclick = e => { e.preventDefault(); askKey(room).then(k => { if (k) location.href = '?room=' + room + (mode === 'watch' ? '&watch=1' : '') + '&k=' + k; }); };
+  $('status').appendChild(b);
+}
+// switch the channels this browser listens on when the key changes
+function setRoomKey(k) {
+  const oldPub = pubTopic(), oldAud = audTopic(), oldWatch = watchTopic();
+  if (mode === 'host' && pubWatch.on) pubRetained(oldWatch, null);   // take the board off the old spectator channel
+  roomKey = k;
+  if (mq && mq.connected) {
+    mq.unsubscribe([oldPub].concat(mode === 'host' ? [oldAud] : []));
+    mq.subscribe([pubTopic()].concat(mode === 'host' ? [audTopic()] : []), { qos: 1 });
+  }
+}
+function updateShareLink() { $('shareLink').value = location.origin + location.pathname + '?room=' + room + (cfg.key ? '&k=' + cfg.key : ''); }
+$('cfgPwSave').onclick = async () => {
+  const pw = wordSafe($('cfgPw').value);
+  cfg.pw = pw; cfg.key = pw ? await hashKey(room, pw) : '';
+  saveCfg();
+  setRoomKey(cfg.key);
+  updateShareLink();
+  pubWatch(); pubLobby(true); send({ type: 'ping' });
+  toast(pw ? '已設定密碼，邀請連結和觀戰連結已自動帶上通關碼' : '已取消密碼');
+};
+
 // ---------- rooms: lobby listing, spectators, public chat ----------
 const LVL_NAME = { off: '不開放', board: '只看棋盤', fun: '棋盤＋貼圖嘲諷', chat: '可公開聊天' };
 const FWD = ['sticker', 'taunt', 'board', 'react'];      // events spectators may see (level fun / chat)
@@ -1783,14 +1960,15 @@ const playerName = role => {
   return role === mode ? myName() : oppName();
 };
 // the first guest owns the seat; someone else may take it only after the seat has been silent for a minute
-function acceptGuest(from) {
+function acceptGuest(from, k) {
   const now = Date.now();
+  if (cfg.key && cfg.guest !== from && k !== cfg.key) return 'badpw';   // a new seat needs the password; the seated friend keeps playing
   if (!cfg.guest || cfg.guest === from || now - (cfg.guestSeen || 0) > 60000) {
     if (cfg.guest !== from) { cfg.guest = from; saveCfg(); }
     if (now - (cfg.guestSeen || 0) > 5000) { cfg.guestSeen = now; saveCfg(); } else cfg.guestSeen = now;
     return true;
   }
-  return false;
+  return 'full';
 }
 function roomFull() {
   if (roomFull.done) return;
@@ -1801,21 +1979,22 @@ function roomFull() {
 function pubRetained(tp, obj) { if (mq && mq.connected) mq.publish(tp, obj ? JSON.stringify(obj) : '', { qos: 1, retain: true }); }
 function pubWatch() {
   if (mode !== 'host' || !state) return;
-  if (cfg.watch === 'off') { if (pubWatch.on) { pubRetained(topic('watch'), null); pubWatch.on = false; } return; }
+  if (cfg.watch === 'off') { if (pubWatch.on) { pubRetained(watchTopic(), null); pubWatch.on = false; } return; }
   pubWatch.on = true;
-  pubRetained(topic('watch'), { type: 'wstate', id: rid(), state: forGuest(state), h: myPf(), g: oppProfile ? { n: oppProfile.name, a: oppProfile.av } : null, lvl: cfg.watch, aud: audN });
+  pubRetained(watchTopic(), { type: 'wstate', id: rid(), state: forGuest(state), h: myPf(), g: oppProfile ? { n: oppProfile.name, a: oppProfile.av } : null, lvl: cfg.watch, aud: audN });
 }
 function pubWatchEv(from, ev) {
   if (mode !== 'host' || (cfg.watch !== 'fun' && cfg.watch !== 'chat') || !mq || !mq.connected) return;
+  if (ev.type === 'sticker' && ev.img) return;   // album photos stay between the two players
   const e = { type: ev.type, sid: ev.sid, img: ev.img, url: ev.url, k: ev.k, e: ev.e };
-  mq.publish(topic('watch'), JSON.stringify({ type: 'wev', id: rid(), from, ev: e }), { qos: 0 });
+  mq.publish(watchTopic(), JSON.stringify({ type: 'wev', id: rid(), from, ev: e }), { qos: 0 });
 }
 function pubLobby(force) {
   if (mode !== 'host') return;
   if (!cfg.lobby) { if (pubLobby.on || force) { pubRetained(lobbyTopic(room), null); pubLobby.on = false; } return; }
   pubLobby.on = true;
   pubLobby.st = online() ? 'play' : 'wait';
-  pubRetained(lobbyTopic(room), { room, n: profile.name, a: profile.av, st: pubLobby.st, lvl: cfg.watch, aud: audN, ts: Date.now() });
+  pubRetained(lobbyTopic(room), { room, n: profile.name, a: profile.av, st: pubLobby.st, lvl: cfg.watch, aud: audN, lock: !!cfg.key, ts: Date.now() });
 }
 // audience: spectators say hello every 10 s; the host counts who was heard in the last 25 s
 const audSeen = {};
@@ -1824,7 +2003,7 @@ function countAud() {
   const now = Date.now(), n = Object.values(audSeen).filter(t0 => now - t0 < 25000).length;
   if (n !== audN) { audN = n; updateAudInfo(); pubWatch(); pubLobby(); send({ type: 'ping' }); }
 }
-function audPing() { if (mode === 'watch' && mq && mq.connected) mq.publish(topic('aud'), JSON.stringify({ id: rid(), w: myId }), { qos: 0 }); }
+function audPing() { if (mode === 'watch' && mq && mq.connected) mq.publish(audTopic(), JSON.stringify({ id: rid(), w: myId }), { qos: 0 }); }
 function updateAudInfo() {
   let txt = '';
   if (mode === 'host' || mode === 'guest') txt = lvl === 'off' ? '' : `觀戰：${LVL_NAME[lvl]}${audN ? '・👀 ' + audN : ''}`;
@@ -1833,6 +2012,7 @@ function updateAudInfo() {
   const canPub = lvl === 'chat';
   $('chanRow').classList.toggle('hidden', !(canPub && (mode === 'host' || mode === 'guest')));
   if (!canPub && chan === 'pub') setChan('priv');
+  updateActbar();
   if (mode === 'watch') {
     $('chatCard').classList.toggle('hidden', !canPub);
     $('chatInput').placeholder = '公開聊天（玩家和觀眾都看得到）';
@@ -1881,6 +2061,7 @@ function onWatch(m) {
 }
 function startWatch() {
   startRelay();
+  setTimeout(() => { if (mode === 'watch' && !watchInfo && !watchOff) needPassword('看不到棋局：房主沒開觀戰，或這個房間有密碼。'); }, 9000);
   updateConn();
   timers.push(setInterval(audPing, 10000));
   timers.push(setInterval(updateConn, 3000));
@@ -1891,15 +2072,17 @@ function startWatch() {
 // host settings
 function showRoomCfg() {
   $('roomCfg').classList.toggle('hidden', mode !== 'host');
+  $('cfgBtn').classList.toggle('hidden', mode !== 'host');
   if (mode !== 'host') return;
   $('cfgLobby').checked = !!cfg.lobby;
   $('cfgWatch').value = cfg.watch;
+  $('cfgPw').value = cfg.pw || '';
 }
 $('cfgLobby').onchange = () => { cfg.lobby = $('cfgLobby').checked; saveCfg(); pubLobby(true); };
 $('cfgWatch').onchange = () => { cfg.watch = $('cfgWatch').value; lvl = cfg.watch; saveCfg(); pubWatch(); pubLobby(); updateAudInfo(); send({ type: 'ping' }); };
 $('watchLinkBtn').onclick = () => {
   if (cfg.watch === 'off') { toast('先把觀戰打開'); return; }
-  const v = location.origin + location.pathname + '?room=' + room + '&watch=1';
+  const v = location.origin + location.pathname + '?room=' + room + '&watch=1' + (cfg.key ? '&k=' + cfg.key : '');
   (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(() => toast('已複製觀戰連結'), () => toast(v, 5000));
 };
 // lobby list on the home page
@@ -1933,24 +2116,26 @@ function renderRooms() {
     const av = STICKERS.find(x => x.id === m.a && AVATARS.includes(m.a));
     const lv = LVL_NAME[m.lvl] ? m.lvl : 'off';
     const st = m.st === 'play' ? `對戰中${lv !== 'off' ? '・觀戰：' + LVL_NAME[lv] : ''}${m.aud ? '・👀 ' + (+m.aud || 0) : ''}` : '等待對手加入';
-    return `<div class="room"><div class="rav">${av ? stkArt(av) : ''}</div><div class="rinfo"><div class="rname">${esc(cleanName(m.n) || '玩家')}</div><div class="rst">${st}</div></div>` +
-      (m.st !== 'play' ? `<button class="primary" data-join="${m.room}">加入對戰</button>` : '') +
-      (lv !== 'off' ? `<button data-watch="${m.room}">觀戰</button>` : '') + '</div>';
+    return `<div class="room"><div class="rav">${av ? stkArt(av) : ''}</div><div class="rinfo"><div class="rname">${m.lock ? '🔒 ' : ''}${esc(cleanName(m.n) || '玩家')}</div><div class="rst">${st}</div></div>` +
+      (m.st !== 'play' ? `<button class="primary" data-join="${m.room}" data-lock="${m.lock ? 1 : ''}">加入對戰</button>` : '') +
+      (lv !== 'off' ? `<button data-watch="${m.room}" data-lock="${m.lock ? 1 : ''}">觀戰</button>` : '') + '</div>';
   }).join('');
 }
 setInterval(renderRooms, 10000);
 $('roomList').onclick = e => {
   const j = e.target.closest('[data-join]'), w = e.target.closest('[data-watch]');
-  if (j) location.href = '?room=' + j.dataset.join;
-  else if (w) location.href = '?room=' + w.dataset.watch + '&watch=1';
+  const b = j || w;
+  if (!b) return;
+  const r = b.dataset.join || b.dataset.watch;
+  (b.dataset.lock ? askKey(r) : Promise.resolve('')).then(k => { if (k === null) return; location.href = '?room=' + r + (w ? '&watch=1' : '') + (k ? '&k=' + k : ''); });
 };
 
 // recent games: remember where I played (with my role, so a host can come back as host)
 const RECENT_KEY = 'bq-recent';
-function recentList() { try { return (JSON.parse(store.get(RECENT_KEY)) || []).filter(r => r && /^[a-z0-9]{6}$/.test(r.room) && /^\?room=[a-z0-9]{6}(&host=[a-z0-9]+|&watch=1)?$/.test(r.q)); } catch (_) { return []; } }
+function recentList() { try { return (JSON.parse(store.get(RECENT_KEY)) || []).filter(r => r && /^[a-z0-9]{6}$/.test(r.room) && /^\?room=[a-z0-9]{6}(&host=[a-z0-9]+|(&watch=1)?(&k=[0-9a-f]{16})?)$/.test(r.q)); } catch (_) { return []; } }
 function rememberGame() {
   if (!room || mode === 'local') return;
-  const q = '?room=' + room + (mode === 'host' ? '&host=' + new URLSearchParams(location.search).get('host') : mode === 'watch' ? '&watch=1' : '');
+  const q = '?room=' + room + (mode === 'host' ? '&host=' + new URLSearchParams(location.search).get('host') : (mode === 'watch' ? '&watch=1' : '') + (roomKey ? '&k=' + roomKey : ''));
   const list = [{ room, q, role: mode, ts: Date.now() }, ...recentList().filter(r => r.room !== room)].slice(0, 5);
   store.set(RECENT_KEY, JSON.stringify(list));
 }
@@ -1962,12 +2147,35 @@ function renderRecent() {
 }
 $('recentList').onclick = e => { const b = e.target.closest('[data-q]'); if (b) location.href = location.pathname + b.dataset.q; };
 
+// Things kept on the public relay (spectator board, lobby card) are removed when the host leaves.
+function clearRelay() {
+  if (mode !== 'host' || !mq || !mq.connected) return;
+  if (pubWatch.on) pubRetained(watchTopic(), null);
+  pubRetained(lobbyTopic(room), null);
+}
+addEventListener('pagehide', clearRelay);
+$('cfgBtn').onclick = () => $('cfgDlg').classList.remove('hidden');
+$('cfgClose').onclick = () => $('cfgDlg').classList.add('hidden');
+$('cfgDlg').onclick = e => { if (e.target === $('cfgDlg')) $('cfgDlg').classList.add('hidden'); };
+function themeIcon() {
+  const dark = document.documentElement.classList.contains('dark');
+  $('themeBtn').textContent = dark ? '☀️' : '🌙';
+  document.querySelector('meta[name="theme-color"]').content = dark ? '#16120e' : '#f4ecdd';
+}
+$('themeBtn').onclick = () => {
+  const dark = document.documentElement.classList.toggle('dark');
+  store.set('bq-theme', dark ? 'dark' : 'light');
+  themeIcon();
+};
+themeIcon();
+
 // back to the lobby (a player in a live online game is asked first; the game itself stays saved)
 async function goHome() {
   if (!mode) return;
   const live = state && !state.winner && state.moveNo > 0 && (mode === 'host' || mode === 'guest');
   if (live && !await ask(mode === 'host' ? '回到大廳嗎？朋友會斷線，之後用原本的網址回來可以接著下。' : '回到大廳嗎？之後用同一個連結回來可以接著下。', '回大廳', '留下來')) return;
-  location.href = location.pathname;
+  clearRelay();
+  setTimeout(() => { location.href = location.pathname; }, 250);
 }
 $('homeBtn').onclick = goHome;
 $('brand').onclick = goHome;
@@ -1977,10 +2185,10 @@ function enterGame() {
   $('lobby').classList.add('hidden'); $('game').classList.remove('hidden');
   document.body.classList.add('ingame');
   $('homeBtn').classList.remove('hidden');
-  $('shareRow').classList.toggle('hidden', mode !== 'host');
+  $('shareRow').classList.add('hidden');
   $('chatCard').classList.toggle('hidden', mode === 'local');
   $('conn').classList.toggle('hidden', mode === 'local');
-  if (mode === 'host') $('shareLink').value = location.origin + location.pathname + '?room=' + room;
+  if (mode === 'host') updateShareLink();
 }
 function loadOrNew() {
   try { state = JSON.parse(store.get(storeKey())); } catch (_) { state = null; }
@@ -2001,6 +2209,11 @@ function createRoom(pub) {
 $('createBtn').onclick = () => createRoom(false);
 $('createPubBtn').onclick = () => createRoom(true);
 $('localBtn').onclick = () => { ac(); history.replaceState(null, '', '?local=1'); boot(); };
+function shareInvite() {
+  const v = $('shareLink').value;
+  if (navigator.share && matchMedia('(pointer: coarse)').matches) { navigator.share({ title: '來下暗棋', url: v }).catch(() => {}); return; }
+  (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(() => toast('已複製邀請連結，傳給朋友吧'), () => toast(v, 6000));
+}
 $('copyBtn').onclick = () => {
   const v = $('shareLink').value;
   if (navigator.share && matchMedia('(pointer: coarse)').matches) { navigator.share({ title: '來下暗棋', url: v }).catch(() => {}); return; }
@@ -2015,14 +2228,16 @@ function boot() {
   room = q.get('room');
   if (q.get('local')) { mode = 'local'; loadOrNew(); }
   else if (room && !/^[a-z0-9]{6}$/.test(room)) { room = null; return; }
-  else if (room && q.get('host')) { mode = 'host'; loadOrNew(); loadCfg(); }
-  else if (room && q.get('watch')) { mode = 'watch'; state = null; }
-  else if (room) { mode = 'guest'; state = null; }
+  else if (room && q.get('host')) { mode = 'host'; loadOrNew(); loadCfg(); roomKey = cfg.key || ''; }
+  else if (room && q.get('watch')) { mode = 'watch'; state = null; roomKey = /^[0-9a-f]{16}$/.test(q.get('k') || '') ? q.get('k') : ''; }
+  else if (room) { mode = 'guest'; state = null; roomKey = /^[0-9a-f]{16}$/.test(q.get('k') || '') ? q.get('k') : ''; }
   else { renderRecent(); startLobbyView(); return; }
   if (lobbyClient) { const c = lobbyClient; lobbyClient = null; c.end(true); }
   enterGame();
   rememberGame();
   showRoomCfg();
+  updateActbar();
+  setMode('chat');
   updateAudInfo();
   if (mode === 'watch') { startWatch(); return; }
   if (mode !== 'local') { startNet(); if (!hadProfile && !profileShown) { profileShown = true; setTimeout(openProfile, 600); } }
