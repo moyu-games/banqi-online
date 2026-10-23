@@ -90,7 +90,7 @@
   .av-grid .pick { aspect-ratio: 1; border-radius: 50%; background: var(--tint); border: 2px solid transparent; padding: 3px; cursor: pointer; }
   .av-grid .pick img, .av-grid .pick svg { width: 100%; height: 100%; object-fit: contain; display: block; }
   .av-grid .pick.on { border-color: var(--gold); background: var(--gold-soft); }
-  .sticker-show.bubble { background: var(--card); border: 1.5px solid rgba(224, 173, 82, .75); border-radius: 18px; padding: 8px; }
+  .sticker-show.bubble { pointer-events: auto; cursor: pointer; background: var(--card); border: 1.5px solid rgba(224, 173, 82, .75); border-radius: 18px; padding: 8px; }
   .sticker-show.bubble::before { content: ""; position: absolute; top: 50%; margin-top: -9px; border: 9px solid transparent; }
   .sticker-show.bubble.me::before { left: -18px; border-right-color: rgba(224, 173, 82, .75); }
   .sticker-show.bubble.opp::before { right: -18px; border-left-color: rgba(224, 173, 82, .75); }
@@ -223,6 +223,9 @@
   .emo { position: fixed; font-size: 42px; z-index: 80; pointer-events: none; line-height: 1; }
   .sticker-show .emo-big { width: 100%; height: 100%; display: grid; place-items: center; font-size: 54px; line-height: 1; }
   .reacts { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .local-who { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .local-who button { font-size: 12px; padding: 4px 10px; }
+  .local-who button.on { background: var(--on-bg); color: var(--on-ink); border-color: transparent; }
   .reacts button { padding: 3px 9px; font-size: 21px; line-height: 1.25; }
   .stamp { display: inline-grid; place-items: center; width: 108px; height: 108px; border: 5px solid currentColor; border-radius: 16px; margin-bottom: 10px;
     font-family: var(--kai); font-size: 72px; line-height: 1; color: #d8402e; transform: rotate(-12deg); background: rgba(216, 64, 46, .08); text-shadow: 0 0 16px rgba(216, 64, 46, .5); }
@@ -292,6 +295,8 @@
   .chan button.on { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); }
   .msg .tag { font-size: 11px; color: var(--muted); margin-right: 6px; }
   .msg.pub { background: rgba(70, 120, 220, .12); }
+  .msg.queued { opacity: .6; }
+  .msg.queued::after { content: '  ⏳ 等朋友進房'; font-size: 11px; color: var(--muted); }
   .msg .tag.mutable { cursor: pointer; text-decoration: underline dotted; }
   .mute-bar { font-size: 12px; text-align: center; margin: 4px 0; }
   .mute-bar a { color: inherit; }
@@ -299,7 +304,7 @@
   @media (min-width: 1000px) {
     main { max-width: 1340px; }
     #game:not(.hidden) { display: grid; grid-template-columns: minmax(0, 1fr) 370px; column-gap: 22px; align-items: start; }
-    .col-side { position: sticky; top: 10px; display: flex; flex-direction: column; max-height: calc(100vh - 84px); }
+    .col-side { position: sticky; top: 10px; display: flex; flex-direction: column; max-height: calc(100vh - 112px); }
     .col-side #chatCard { display: flex; flex-direction: column; min-height: 0; flex: 1; }
     .col-side #chatLog { flex: 1; max-height: none; min-height: 140px; }
     .col-side .tray-grid { max-height: 32vh; }
@@ -444,6 +449,7 @@
 
     <div class="panel" id="chatCard" data-mode="chat">
       <div class="sheet-handle" id="sheetHandle"></div>
+      <div class="local-who hidden" id="localWho">誰在傳：<button type="button" data-r="auto">剛下完的人</button><button type="button" data-r="host">玩家一</button><button type="button" data-r="guest">玩家二</button></div>
       <div class="modes" id="modeTabs"><button type="button" data-m="chat" id="chatTabBtn" class="on">💬 聊天<i class="dot-badge hidden"></i></button><button type="button" data-m="sticker" id="trayBtn">🖼️ 貼圖</button><button type="button" data-m="taunt" id="tauntBtn">😏 嘲諷</button></div>
       <div class="reacts" id="reacts"></div>
       <div class="game-panel hidden" id="gamePanel"></div>
@@ -495,16 +501,16 @@
 <div id="quick" class="hidden"></div>
 <div id="prof" class="hidden"><div class="card"><h3>你的名字和頭像</h3><input id="profName" maxlength="12" placeholder="名字（最多 12 個字）" autocomplete="off"><p class="muted" style="font-size:12px;margin:-4px 0 10px">名字會顯示給對手、觀眾和大廳，建議用暱稱，不要用真實姓名。</p><div class="av-grid" id="avGrid"></div><div class="row" style="justify-content:flex-end"><button class="primary" id="profSave">好了</button></div></div></div>
 <div id="ask" class="hidden"><div class="card"><p id="askText"></p><input id="askInput" class="hidden" type="password" maxlength="20" autocomplete="off" style="width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin:-6px 0 14px"><div class="row"><button class="primary" id="askYes"></button><button id="askNo"></button></div></div></div>
-<div class="ver">版本 18</div>
+<div class="ver">版本 19</div>
 <div id="overlay" class="hidden"><div class="card"><div class="stamp" id="ovStamp"></div><h2 id="ovTitle"></h2><p id="ovReason"></p><p id="ovFair" class="muted fair-note"></p><div class="row"><button class="primary" id="ovAgain" data-t="again"></button><button id="ovClose" data-t="close"></button></div></div></div>
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
-<script src="logic.js?v=18"></script>
-<script src="stickers.js?v=18"></script>
+<script src="logic.js?v=19"></script>
+<script src="stickers.js?v=19"></script>
 <script>
-const APP_VER = '18';
+const APP_VER = '19';
 (function checkVersion() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.text() : '')).then(v => {
     v = v.trim();
@@ -1265,12 +1271,12 @@ $('reacts').onclick = e => {
   const b = e.target.closest('button'); if (!b || !b.dataset.e || Date.now() - lastReact < 350) return;
   lastReact = Date.now();
   send({ type: 'react', e: b.dataset.e });
-  floatEmoji(b.dataset.e, true);
+  floatEmoji(b.dataset.e, selfSide());
 };
 function floatEmoji(e, mine) {
   if (!EMOJI.includes(e)) return;
   sfx.bloop();
-  popBubble(`<div class="emo-big">${e}</div>`, mine, 92, ' emoji');   // same bubble by the sender's avatar as a sticker
+  popBubble(`<div class="emo-big">${e}</div>`, mine, 92, ' emoji', 2000);   // same bubble by the sender's avatar as a sticker
 }
 
 // ---------- stickers ----------
@@ -1371,17 +1377,19 @@ function placeGameBtns() {
   else if (btns.parentElement !== $('gamePanel')) $('gamePanel').appendChild(btns);
 }
 placeGameBtns();
-wideMQ.addEventListener('change', () => { placeGameBtns(); if (wideMQ.matches && sheetOpen) closeSheet(); if (wideMQ.matches && (chatMode === 'emoji' || chatMode === 'game')) setMode('chat'); });
+wideMQ.addEventListener('change', () => { placeGameBtns(); if (wideMQ.matches && sheetOpen) closeSheet(); if (wideMQ.matches && (chatMode === 'emoji' || chatMode === 'game')) setMode(mode === 'local' ? 'sticker' : 'chat'); });
 // which bottom-bar buttons make sense for this seat
 function updateActbar() {
-  const player = mode === 'host' || mode === 'guest', watcherChat = mode === 'watch' && lvl === 'chat';
+  const player = mode === 'host' || mode === 'guest' || mode === 'local', watcherChat = mode === 'watch' && lvl === 'chat';
   $('actbar').classList.toggle('hidden', !(player || watcherChat));
   const had = document.body.classList.contains('has-bar');
   document.body.classList.toggle('has-bar', player || watcherChat);
   if (state && had !== (player || watcherChat)) fitBoard(true);
-  document.querySelectorAll('#actbar [data-m]').forEach(b => b.classList.toggle('hidden', !player && b.dataset.m !== 'chat'));
+  const hide = b => mode === 'local' ? b.dataset.m === 'chat' : !player && b.dataset.m !== 'chat';   // one screen has nobody to chat with
+  document.querySelectorAll('#actbar [data-m]').forEach(b => b.classList.toggle('hidden', hide(b)));
   placeGameBtns();
-  document.querySelectorAll('#modeTabs [data-m]').forEach(b => b.classList.toggle('hidden', !player && b.dataset.m !== 'chat'));
+  document.querySelectorAll('#modeTabs [data-m]').forEach(b => b.classList.toggle('hidden', hide(b)));
+  if (mode === 'local' && chatMode === 'chat') setMode(wideMQ.matches ? 'sticker' : 'emoji');
 }
 $('trayGrid').onclick = e => {
   const del = e.target.closest('[data-del]');
@@ -1394,7 +1402,7 @@ $('trayGrid').onclick = e => {
   const cu = customs[+el.dataset.c];
   const msg = el.dataset.id ? { type: 'sticker', sid: el.dataset.id } : { type: 'sticker', url: cu };
   send(msg);
-  showSticker(msg, true);
+  showSticker(msg, selfSide());
 };
 function showSticker(m, mine) {
   let html;
@@ -1406,7 +1414,7 @@ function showSticker(m, mine) {
 }
 // A speech bubble right next to the sender's avatar (mine on the left card, the friend's on the right),
 // never over the avatar or the board. If the cards are scrolled away, it shows mid-screen.
-function popBubble(html, mine, max = 124, extra = '') {
+function popBubble(html, mine, max = 124, extra = '', dur = 3500) {
   const who = $(mine ? 'pMe' : 'pOpp');
   document.querySelectorAll('.sticker-show.' + (mine ? 'me' : 'opp')).forEach(x => x.remove());
   const c = who.getBoundingClientRect(), av = who.querySelector('.av').getBoundingClientRect(), boardTop = wrapEl().getBoundingClientRect().top;
@@ -1438,10 +1446,11 @@ function popBubble(html, mine, max = 124, extra = '') {
   document.body.appendChild(d);
   who.animate([{ boxShadow: '0 0 0 2px #e0ad52, 0 0 28px rgba(224,173,82,.6)' }, { boxShadow: '0 0 0 0 transparent' }], { duration: 900 });
   const base = '';
-  if (reduced) { setTimeout(() => d.remove(), 2000); return; }
+  d.onclick = () => d.remove();   // tap to close early (it may cover the top of the board on a phone)
+  if (reduced) { setTimeout(() => d.remove(), dur); return; }
   d.animate([{ transform: base + 'scale(0) rotate(-20deg)', opacity: 0, easing: 'cubic-bezier(.2,1.4,.5,1)' }, { transform: base + 'scale(1.15) rotate(6deg)', opacity: 1, offset: .12 },
     { transform: base + 'scale(.95) rotate(-3deg)', opacity: 1, offset: .25 }, { transform: base + 'scale(1) rotate(0)', opacity: 1, offset: .82, easing: 'ease-in' },
-    { transform: base + 'translateY(-40px) scale(.9)', opacity: 0 }], { duration: 2600 }).onfinish = () => d.remove();
+    { transform: base + 'translateY(-40px) scale(.9)', opacity: 0 }], { duration: dur }).onfinish = () => d.remove();
 }
 
 // ---------- profile (name + avatar) ----------
@@ -1661,7 +1670,7 @@ $('boardChips').innerHTML = BOARD.map(([label], k) => `<button type="button" dat
 let lastTaunt = 0;
 // Before the friend arrives you can still try taunts / sounds / stickers: they play on your own screen only.
 function previewNote() {
-  if (online() || previewNote.done) return;
+  if (mode === 'local' || online() || previewNote.done) return;
   previewNote.done = true;
   toast('朋友還沒加入，先自己試試；他加入後按的才會傳過去', 3500);
 }
@@ -1671,9 +1680,18 @@ function okToSend() {
   lastTaunt = Date.now();
   return true;
 }
-const sendTaunt = k => { if (okToSend()) { send({ type: 'taunt', k }); sayTaunt(k, true); } };
+const sendTaunt = k => { if (okToSend()) { send({ type: 'taunt', k }); sayTaunt(k, selfSide()); } };
+// Same device: whose card a sticker / emoji / taunt pops by. "Auto" = whoever just moved (the one likely to gloat).
+let localSender = 'auto';
+const localRole = () => localSender !== 'auto' ? localSender : state && state.moveNo ? B.other(state.turn) : 'host';
+const selfSide = () => mode !== 'local' || localRole() === 'host';
+function renderLocalWho() {
+  $('localWho').classList.toggle('hidden', mode !== 'local');
+  document.querySelectorAll('#localWho [data-r]').forEach(b => b.classList.toggle('on', b.dataset.r === localSender));
+}
+$('localWho').onclick = e => { const b = e.target.closest('[data-r]'); if (b) { localSender = b.dataset.r; renderLocalWho(); } };
 $('tauntChips').onclick = e => { const b = e.target.closest('[data-k]'); if (b) sendTaunt(+b.dataset.k); };
-$('boardChips').onclick = e => { const b = e.target.closest('[data-b]'); if (b && okToSend()) { send({ type: 'board', k: +b.dataset.b }); playBoard(+b.dataset.b, true); } };
+$('boardChips').onclick = e => { const b = e.target.closest('[data-b]'); if (b && okToSend()) { send({ type: 'board', k: +b.dataset.b }); playBoard(+b.dataset.b, selfSide()); } };
 
 // speech (browser built-in voices); iOS only speaks after the page has been touched once, so unlock on first tap
 let voice = null;
@@ -1854,7 +1872,13 @@ $('chatForm').onsubmit = e => {
     addChat('me', v, true, myName() + (mode === 'host' ? '（房主）' : mode === 'watch' ? '（觀眾）' : ''), mode === 'watch' ? null : 'me'); $('chatInput').value = '';
     return;
   }
-  if (!online()) { toast(t('waiting')); return; }
+  if (!online()) {   // the friend is not here yet: keep it and deliver it the moment they connect
+    if (outbox.length >= 20) { toast('先存了 20 則，等朋友進來再傳吧'); return; }
+    outbox.push(v); addChat('me', v, false, '', 'me'); $('chatInput').value = '';
+    $('chatLog').lastElementChild.classList.add('queued');
+    if (!outbox.toasted) { outbox.toasted = true; toast('朋友還沒進來，他一進房就會收到'); }
+    return;
+  }
   send({ type: 'chat', text: v }); addChat('me', v, false, '', 'me'); $('chatInput').value = '';
 };
 
@@ -1876,6 +1900,11 @@ function remember(id) {   // ids of messages already handled; bounded so a flood
 let mq = null, lastHeard = 0, heard = { p2p: 0, relay: 0 }, gotState = false, startedAt = Date.now(), timers = [];
 const rid = () => Math.random().toString(36).slice(2, 12);
 const online = () => Date.now() - lastHeard < 12000;
+const outbox = [];
+function flushOutbox() {
+  while (outbox.length) send({ type: 'chat', text: outbox.shift() });
+  document.querySelectorAll('#chatLog .msg.queued').forEach(d => d.classList.remove('queued'));
+}
 
 // What the guest is allowed to see: face-down pieces carry no type or color.
 const forGuest = st => Object.assign({}, st, { board: st.board.map(x => (x && !x.up ? { up: false } : x)),
@@ -1936,7 +1965,7 @@ function receive(m, ch) {
   if (mode === 'host' && FWD.includes(m.type)) pubWatchEv('guest', m);
   const wasOnline = online();
   lastHeard = Date.now();
-  if (!wasOnline) updateConn();
+  if (!wasOnline) { updateConn(); flushOutbox(); }
   if (m.pf) takeProfile(m.pf);
   if (mode === 'host') {
     if (m.type === 'hello' || m.type === 'ping') { if (m.type === 'hello' || m.gid !== state.gid || !(m.seq >= state.seq)) sendState(); if (m.type === 'hello') { send({ type: 'profile' }); ensureFair(); } }
@@ -2389,7 +2418,7 @@ function enterGame() {
   document.body.classList.add('ingame');
   $('homeBtn').classList.remove('hidden');
   $('shareRow').classList.add('hidden');
-  $('chatCard').classList.toggle('hidden', mode === 'local');
+  renderLocalWho();
   $('conn').classList.toggle('hidden', mode === 'local');
   if (mode === 'host') updateShareLink();
 }
@@ -2441,7 +2470,7 @@ function boot() {
   rememberGame();
   showRoomCfg();
   updateActbar();
-  setMode('chat');
+  setMode(mode === 'local' ? (wideMQ.matches ? 'sticker' : 'emoji') : 'chat');
   updateAudInfo();
   if (mode === 'watch') { startWatch(); return; }
   if (mode !== 'local') { startNet(); if (!hadProfile && !profileShown) { profileShown = true; setTimeout(openProfile, 600); } }
