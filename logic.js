@@ -83,7 +83,10 @@
     return acts;
   }
 
+  const isSq = v => Number.isInteger(v) && v >= 0 && v < N;
   function apply(state, role, action) {
+    if (!action || typeof action !== 'object' || (action.type === 'flip' ? !isSq(action.i) : action.type === 'move' ? !(isSq(action.from) && isSq(action.to)) : true))
+      return { ok: false, err: 'bad action' };
     if (state.winner) return { ok: false, err: 'game over' };
     if (state.turn !== role) return { ok: false, err: 'not your turn' };
     const s = JSON.parse(JSON.stringify(state)), b = s.board;

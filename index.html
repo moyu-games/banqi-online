@@ -269,6 +269,8 @@
     font-family: var(--kai); font-weight: 700; font-size: 22px; line-height: 1.2; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, .5), 0 0 0 2px var(--gold); white-space: nowrap; }
   .say::before { content: ""; position: absolute; top: 50%; margin-top: -9px; border: 9px solid transparent; }
   .say.me::before { left: -16px; border-right-color: #fff7e6; } .say.opp::before { right: -16px; border-left-color: #fff7e6; }
+  .say.below::before { top: -16px; margin-top: 0; border-color: transparent; border-bottom-color: #fff7e6; }
+  .say.below.me::before { left: 18px; } .say.below.opp::before { left: auto; right: 18px; }
   .snail { position: fixed; z-index: 87; font-size: 56px; pointer-events: none; bottom: 22%; }
   #brag { position: fixed; inset: 0; z-index: 88; display: grid; place-items: center; pointer-events: none; }
   #brag .card { background: var(--card); border: 2px solid var(--gold); border-radius: 18px; padding: 16px 20px; text-align: center; box-shadow: 0 20px 60px rgba(0, 0, 0, .6); max-width: calc(100vw - 32px); }
@@ -501,16 +503,16 @@
 <div id="quick" class="hidden"></div>
 <div id="prof" class="hidden"><div class="card"><h3>你的名字和頭像</h3><input id="profName" maxlength="12" placeholder="名字（最多 12 個字）" autocomplete="off"><p class="muted" style="font-size:12px;margin:-4px 0 10px">名字會顯示給對手、觀眾和大廳，建議用暱稱，不要用真實姓名。</p><div class="av-grid" id="avGrid"></div><div class="row" style="justify-content:flex-end"><button class="primary" id="profSave">好了</button></div></div></div>
 <div id="ask" class="hidden"><div class="card"><p id="askText"></p><input id="askInput" class="hidden" type="password" maxlength="20" autocomplete="off" style="width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin:-6px 0 14px"><div class="row"><button class="primary" id="askYes"></button><button id="askNo"></button></div></div></div>
-<div class="ver">版本 19</div>
+<div class="ver">版本 21</div>
 <div id="overlay" class="hidden"><div class="card"><div class="stamp" id="ovStamp"></div><h2 id="ovTitle"></h2><p id="ovReason"></p><p id="ovFair" class="muted fair-note"></p><div class="row"><button class="primary" id="ovAgain" data-t="again"></button><button id="ovClose" data-t="close"></button></div></div></div>
 <div id="toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
-<script src="logic.js?v=19"></script>
-<script src="stickers.js?v=19"></script>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js" integrity="sha384-u4uqeACkFcoKl57rBQJHVGDd1pqhW4w8X3WjTu1ZksPdxoLqdt34jpoNkJisE25W" crossorigin="anonymous"></script>
+<script src="logic.js?v=21"></script>
+<script src="stickers.js?v=21"></script>
 <script>
-const APP_VER = '19';
+const APP_VER = '21';
 (function checkVersion() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.text() : '')).then(v => {
     v = v.trim();
@@ -735,7 +737,7 @@ portraitMQ.addEventListener('change', () => { if (state) { fitBoard(true); rende
 // ---------- rendering ----------
 function render(animate = true) {
   fitBoard();
-  capDelay = animate && !reduced && prev && state.last && state.last.cap && state.moveNo === prev.moveNo + 1 && state.board[state.last.to]
+  capDelay = animate && !reduced && prev && prev.gid === state.gid && state.last && state.last.cap && state.moveNo === prev.moveNo + 1 && state.board[state.last.to]
     ? CAP[state.board[state.last.to].t].impact + 600 : 0;
   const board = $('board'), myRole = me(), myTurn = state.turn === myRole && !state.winner && mode !== 'watch';
   const myCol = state.colors && state.colors[myRole];
@@ -792,7 +794,7 @@ function animateFrom(p) {
   if (!p) return;
   if (s.moveNo === 0 && (p.gid !== s.gid || p.moveNo > 0)) return deal();
   if (!last) return;
-  if (s.moveNo !== p.moveNo + 1) return;
+  if (s.moveNo !== p.moveNo + 1 || s.gid !== p.gid) return;
   if (!last.cap) playSound(p);   // captures make their own sounds in effects()
   effects(p, s);
   if (last.type === 'flip') {
@@ -1067,7 +1069,7 @@ function renderStatus() {
   let s;
   if (state.winner) {
     if (state.winner === 'draw') s = `<b>${t('draw')}</b>`;
-    else if (mode === 'local') s = `<b>${t('winOf')(colName(state.colors[state.winner]))}</b>`;
+    else if (mode === 'local') s = `<b>${state.colors ? t('winOf')(colName(state.colors[state.winner])) : (state.winner === 'host' ? t('p1') : t('p2')) + '獲勝！'}</b>`;
     else if (mode === 'watch') s = `<b>${esc(playerName(state.winner))}獲勝！</b>`;
     else s = `<b>${state.winner === mode ? t('win') : t('lose')}</b>`;
     s += ' ' + esc(reasonText());   // contains the friend's name
@@ -1087,7 +1089,7 @@ function showOver() {
   if (!state.winner) return;
   let title;
   if (state.winner === 'draw') title = t('draw');
-  else if (mode === 'local') title = t('winOf')(colName(state.colors[state.winner]));
+  else if (mode === 'local') title = state.colors ? t('winOf')(colName(state.colors[state.winner])) : (state.winner === 'host' ? t('p1') : t('p2')) + '獲勝！';
   else if (mode === 'watch') title = playerName(state.winner) + '獲勝！';
   else title = state.winner === mode ? t('win') : t('lose');
   $('ovTitle').textContent = title;
@@ -1156,7 +1158,7 @@ let pend = null;
 function guestAct(action) {
   const base = state;
   pend = { action, base, gid: base.gid, n: base.moveNo, tries: 1 };
-  send({ type: 'action', action });
+  send({ type: 'action', action, gid: base.gid, n: base.moveNo });
   const r = action.type === 'move' ? B.apply(base, 'guest', action) : null;
   if (r && r.ok && !r.state.winner) { state = r.state; render(true); }   // a win needs the hidden pieces, so it waits for the host
   else { knock(1500, .05, .25); render(false); }
@@ -1164,13 +1166,18 @@ function guestAct(action) {
 }
 function pendSlow() {
   if (!pend) return;
-  if (pend.tries < 3) { pend.tries++; send({ type: 'action', action: pend.action }); pend.timer = setTimeout(pendSlow, 2500); return; }
+  if (pend.tries < 3) { pend.tries++; send({ type: 'action', action: pend.action, gid: pend.gid, n: pend.n }); pend.timer = setTimeout(pendSlow, 2500); return; }
   const base = pend.base; endPend();
   if (state !== base) state = base;
   render(false);
   toast('連線有點慢，這步沒送到，請再點一次');
 }
 function endPend() { if (pend) { clearTimeout(pend.timer); pend = null; } }
+function refusePend() {   // the host said no: back to where we were
+  const base = pend.base; endPend();
+  if (state !== base && state.gid === base.gid) state = base;
+  render(false);
+}
 
 function setState(s, animate = true) {
   if (mode === 'host') s.seq = ((state && state.seq) || 0) + 1;
@@ -1184,10 +1191,17 @@ const storeKey = () => (mode === 'local' ? 'bq-local' : 'bq-room-' + room);
 function newGame(skipConfirm) {
   if (mode === 'guest' && !state) return;
   if (!skipConfirm && state && state.moveNo > 0 && !state.winner && !confirm(t('confirmNew'))) return;
-  if (mode === 'guest') { send({ type: 'reset', gid: state.gid }); return; }
+  if (mode === 'guest') { send({ type: 'reset', gid: state.gid }); if (state.moveNo > 0 && !state.winner) toast('已請' + oppName() + '同意重新開局…', 2500); return; }
   resetGame();
 }
 $('newBtn').onclick = () => newGame(false);
+async function guestWantsReset() {
+  if (state.moveNo === 0 || state.winner) { resetGame(); return; }
+  const gid = state.gid;
+  const ok = await ask(oppName() + '想重新開局（這局作廢），同意嗎？', '同意', '不同意');
+  if (state.gid !== gid) return;
+  if (ok) resetGame(); else send({ type: 'resetNo' });
+}
 function resetGame() {
   const first = state ? B.other(state.first) : 'host';
   sel = null;
@@ -1216,19 +1230,21 @@ function seededRnd(h) {   // sfc32 seeded with the first 128 bits of a hex hash
 const dealFrom = async (hs, gs, first) => B.newGame(first, seededRnd(await sha256(hs + '|' + gs))).board;
 const HEX32 = /^[0-9a-f]{32}$/;
 let fairBusy = false, seedBusy = null;
+const movedGids = new Set();   // games that had a move: never re-dealt, even after taking the moves back
 function ensureFair() {   // host: commit to a secret for a game nobody has touched yet
   if (mode !== 'host' || fairBusy || !state || state.moveNo !== 0 || state.winner || state.fair) return;
   fairBusy = true;
   const gid = state.gid, hs = randHex(16);
   sha256(hs).then(c => {
     fairBusy = false;
-    if (state.gid !== gid || state.moveNo !== 0 || state.fair) return;
+    if (state.gid !== gid) { ensureFair(); return; }   // a new game started meanwhile: commit to that one
+    if (state.moveNo !== 0 || state.fair) return;
     const s = JSON.parse(JSON.stringify(state)); s.fair = { hs, c }; setState(s, false);
   });
 }
 function takeSeed(m) {    // host: re-deal the untouched board from both halves
   const f = state.fair;
-  if (m.gid !== state.gid || state.moveNo !== 0 || state.winner || !f || !f.c || f.gs || seedBusy || typeof m.gs !== 'string' || !HEX32.test(m.gs)) return;
+  if (m.gid !== state.gid || state.moveNo !== 0 || movedGids.has(state.gid) || state.winner || !f || !f.c || f.gs || seedBusy || typeof m.gs !== 'string' || !HEX32.test(m.gs)) return;
   const gid = state.gid;
   seedBusy = dealFrom(f.hs, m.gs, state.first).then(board => {
     seedBusy = null;
@@ -1236,22 +1252,27 @@ function takeSeed(m) {    // host: re-deal the untouched board from both halves
     const s = JSON.parse(JSON.stringify(state)); s.board = board; s.fair.gs = m.gs; setState(s, false);
   });
 }
-// guest: the seed it gave and every flip it saw, kept across reloads
-let mySeed = {}, flipLog = { f: {} };
+// guest: the seed it gave and every flip it saw, kept across reloads; how often the host restarted an untouched game
+let mySeed = {}, flipLog = { f: {} }, redeals = 0;
+const redealsBefore = {};
 const seedKey = () => 'bq-seed-' + room, flipKey = () => 'bq-flips-' + room;
 function guestFair(s) {
   if (!mySeed.gid) { try { mySeed = JSON.parse(store.get(seedKey()) || '{}'); flipLog = JSON.parse(store.get(flipKey()) || '{"f":{}}'); } catch (_) {} }
   if (flipLog.gid !== s.gid) flipLog = { gid: s.gid, f: {} };
   const l = s.last, p = l && l.type === 'flip' && s.board[l.i];
   if (p && p.up && !flipLog.f[l.i]) { flipLog.f[l.i] = p.c + p.t; store.set(flipKey(), JSON.stringify(flipLog)); }
-  if (s.fair && s.fair.c && !s.fair.gs && s.moveNo === 0 && !s.winner && mySeed.gid !== s.gid) {
-    mySeed = { gid: s.gid, gs: randHex(16) }; store.set(seedKey(), JSON.stringify(mySeed));
+  if (s.fair && s.fair.c && !s.fair.gs && s.moveNo === 0 && !s.winner && mySeed.gid !== s.gid && !Object.keys(flipLog.f).length) {   // never re-deal a board we've seen flips on
+    mySeed = { gid: s.gid, gs: randHex(16), c: s.fair.c, t: Date.now() }; store.set(seedKey(), JSON.stringify(mySeed));
     send({ type: 'seed', gid: s.gid, gs: mySeed.gs });
+  } else if (s.fair && s.fair.c && !s.fair.gs && s.moveNo === 0 && !s.winner && mySeed.gid === s.gid && Date.now() - (mySeed.t || 0) > 3000) {
+    mySeed.t = Date.now(); send({ type: 'seed', gid: s.gid, gs: mySeed.gs });   // the first one may have been lost
   }
 }
 async function fairNote(s) {
   const f = s.fair;
   if (!f || !f.c || mode === 'local') return '';
+  if (mode === 'guest' && mySeed.gid === s.gid && f.c !== mySeed.c) return '⚠️ 房主公開的承諾和開局時給你的不一樣，洗牌可能被動過手腳。';
+  if (mode === 'guest' && mySeed.gid === s.gid && !f.gs) return '⚠️ 你出的亂數沒有被用來洗牌。';
   if (!f.gs) return '這局開始時朋友還沒進來，由房主單獨洗牌。';
   if (mode === 'watch') return '🎲 這局由雙方共同洗牌。';
   if (mode !== 'guest') return '🎲 這局由雙方共同洗牌，朋友那邊會自動驗證。';
@@ -1260,7 +1281,8 @@ async function fairNote(s) {
   if (mySeed.gid === s.gid && mySeed.gs !== f.gs) return '⚠️ 這局洗牌沒有用你出的亂數。';
   const b0 = await dealFrom(f.hs, f.gs, s.first), seen = flipLog.gid === s.gid ? flipLog.f : {}, n = Object.keys(seen).length;
   const bad = Object.keys(seen).filter(i => !b0[i] || b0[i].c + b0[i].t !== seen[i]).length;
-  return bad ? `⚠️ 有 ${bad} 次翻棋和開局排法對不上，洗牌可能被動過手腳。` : `🎲 雙方共同洗牌，已驗證：${n} 次翻棋都符合開局排法。`;
+  const re = redealsBefore[s.gid] ? `（這局之前，房主重開了 ${redealsBefore[s.gid]} 次還沒下的局）` : '';
+  return bad ? `⚠️ 有 ${bad} 次翻棋和開局排法對不上，洗牌可能被動過手腳。` : `🎲 雙方共同洗牌，已驗證：${n} 次翻棋都符合開局排法。${re}`;
 }
 
 // ---------- emoji reactions ----------
@@ -1414,6 +1436,8 @@ function showSticker(m, mine) {
 }
 // A speech bubble right next to the sender's avatar (mine on the left card, the friend's on the right),
 // never over the avatar or the board. If the cards are scrolled away, it shows mid-screen.
+// where a bubble will sit once its pop-in animation is done (getBoundingClientRect would see it scaled down)
+const restBox = e => { const l = parseFloat(e.style.left), t = parseFloat(e.style.top); return { left: l, top: t, right: l + e.offsetWidth, bottom: t + e.offsetHeight }; };
 function popBubble(html, mine, max = 124, extra = '', dur = 3500) {
   const who = $(mine ? 'pMe' : 'pOpp');
   document.querySelectorAll('.sticker-show.' + (mine ? 'me' : 'opp')).forEach(x => x.remove());
@@ -1422,7 +1446,8 @@ function popBubble(html, mine, max = 124, extra = '', dur = 3500) {
   let size = Math.min(max, innerWidth * .33), x, y, origin, cls = 'sticker-show ' + (mine ? 'me' : 'opp') + extra;
   // where the card's own content (avatar, name with colour, trophies) ends, so the bubble never covers it
   const span = el => { const r = document.createRange(); r.selectNodeContents(el); const b = r.getBoundingClientRect(); return b.width ? b : null; };
-  const parts = [av, span(who.querySelector('.who')), span(who.querySelector('.caps'))].filter(Boolean);
+  const sayEl = document.querySelector('.say:not(.below).' + (mine ? 'me' : 'opp'));
+  const parts = [av, span(who.querySelector('.who')), span(who.querySelector('.caps')), sayEl && restBox(sayEl)].filter(Boolean);
   const inner = mine ? Math.max(...parts.map(b => b.right)) : Math.min(...parts.map(b => b.left));
   const free = mine ? c.right - inner - 18 : inner - c.left - 18;
   if (c.bottom > 20 && c.top < innerHeight - 100 && free >= Math.min(size, 96)) {
@@ -1433,7 +1458,8 @@ function popBubble(html, mine, max = 124, extra = '', dur = 3500) {
     cls += ' bubble';
   } else if (c.bottom > 20 && c.top < innerHeight - 100) {
     size = Math.min(max * .9, innerWidth * .3);   // narrow card (phone): just under the avatar, pointing up at it
-    y = c.bottom + 12;
+    const sayBelow = document.querySelector('.say.below.' + (mine ? 'me' : 'opp'));
+    y = (sayBelow ? restBox(sayBelow).bottom : c.bottom) + 12;
     x = mine ? Math.max(6, av.left + av.width / 2 - 30) : Math.min(innerWidth - 6 - size, av.right - av.width / 2 + 30 - size);
     origin = mine ? '20% 0%' : '80% 0%';
     cls += ' bubble below';
@@ -1497,7 +1523,13 @@ $('pMe').onclick = () => { if (mode === 'host' || mode === 'guest') openProfile(
 $('watchNameBtn').onclick = () => openProfile();
 
 // ---------- ask dialog ----------
-function ask(text, yes, no, withInput) {
+let askQ = Promise.resolve();
+function ask(text, yes, no, withInput) {   // dialogs queue up instead of replacing each other
+  const p = askQ.then(() => askNow(text, yes, no, withInput));
+  askQ = p.catch(() => {});
+  return p;
+}
+function askNow(text, yes, no, withInput) {
   return new Promise(res => {
     $('askText').textContent = text; $('askYes').textContent = yes; $('askNo').textContent = no;
     $('askInput').classList.toggle('hidden', !withInput); $('askInput').value = '';
@@ -1529,11 +1561,12 @@ $('resignBtn').onclick = async () => {
 
 // ---------- take back (悔棋): only your own last move, and only if the other player agrees ----------
 let undoHist = [];          // host / local: earlier states of this game
-let undoPending = 0;       // moveNo we asked to take back, while waiting for the answer
+let undoPending = 0, undoSeq = 0;       // moveNo we asked to take back, while waiting for the answer
 const histKey = () => storeKey() + '-h';
 function loadHistory() { try { undoHist = JSON.parse(store.get(histKey())) || []; } catch (_) { undoHist = []; } }
 function saveHistory() { undoHist = undoHist.slice(-30); store.set(histKey(), JSON.stringify(undoHist)); }
 function commit(next) {    // apply a move and remember the position before it
+  movedGids.add(next.gid);
   undoHist.push(JSON.parse(JSON.stringify(state)));
   saveHistory();
   setState(next);
@@ -1549,7 +1582,7 @@ function doUndo(role) {   // host / local only
   setState(before, false);
   sfx.rewind();
   banner('悔棋', mode === 'local' ? '' : esc(role === mode ? t('you') : oppName()) + '收回了上一步');
-  if (mode === 'host') send({ type: 'undoAns', ok: true, done: true, gid: state.gid });
+  if (mode === 'host') send({ type: 'undoAns', ok: true, done: true, gid: state.gid, role });
   return true;
 }
 function updateButtons() {
@@ -1562,10 +1595,11 @@ $('undoBtn').onclick = () => {
   if (mode === 'local') { doUndo(lastMover()); return; }
   if (!canUndo(mode)) return;
   undoPending = state.moveNo;
+  const tok = ++undoSeq;
   updateButtons();
   send({ type: 'undoReq', gid: state.gid, moveNo: state.moveNo });
   toast('已請朋友同意悔棋…', 2500);
-  setTimeout(() => { if (undoPending) { undoPending = 0; updateButtons(); } }, 20000);
+  setTimeout(() => { if (undoPending && undoSeq === tok) { undoPending = 0; updateButtons(); } }, 20000);
 };
 async function onUndoRequest(m) {   // the other player wants to take back their last move
   const other = mode === 'host' ? 'guest' : 'host';
@@ -1580,15 +1614,16 @@ async function onUndoRequest(m) {   // the other player wants to take back their
 function onUndoAnswer(m) {
   if (mode === 'host' && m.ok && !m.done) {          // the guest agreed to the host's request
     if (undoPending && m.moveNo === undoPending && m.gid === state.gid) doUndo('host');
+    else send({ type: 'undoAns', ok: false, late: true, gid: m.gid });   // our request had already timed out
     return;
   }
   if (mode === 'guest' && m.ok && m.done) {          // the host carried out an undo
     sfx.rewind();
-    banner('悔棋', esc(undoPending ? t('you') : oppName()) + '收回了上一步');
+    banner('悔棋', esc(m.role === 'guest' ? t('you') : oppName()) + '收回了上一步');
     undoPending = 0; updateButtons();
     return;
   }
-  if (!m.ok) { if (undoPending) toast(m.stale ? '來不及了，棋局已經往下走' : oppName() + '不同意悔棋'); undoPending = 0; updateButtons(); }
+  if (!m.ok) { if (m.late) toast('悔棋請求已經逾時，沒有收回'); else if (undoPending) toast(m.stale ? '來不及了，棋局已經往下走' : oppName() + '不同意悔棋'); undoPending = 0; updateButtons(); }
 }
 
 // ---------- victory party ----------
@@ -1632,7 +1667,7 @@ const TAUNTS = ['就這？', '你在想什麼', '謝謝招待', '我等到睡著
 // Popular meme sounds, played straight from MyInstants (their files, linked, not copied here).
 const BOARD = [['💥 Vine Boom', 'vine-boom'], ['😑 Bruh', 'movie_1'], ['😱 FAAAH', 'faaah'], ['📯 空氣喇叭', 'mlg-airhorn'], ['💀 情感傷害', 'emotional-damage-meme'],
   ['🎺 悲傷長號', 'sadtrombone.swf'], ['🥁 蹦蹦嚓', 'rimshot'], ['🦗 冷場蟋蟀', 'crickets'], ['🎻 悲傷小提琴', 'tf_nemesis'], ['😹 貓咪狂笑', 'cat-laugh-meme-1'],
-  ['😲 震驚', 'shocked-sound-effect'], ['🔩 鋼管落地', 'gang-guan-luo-di'], ['💪 館長', 'guan-chang'], ['🐔 乾林涼勒', 'gan-lin-liang-le-shui-da-lai-la'],
+  ['😲 震驚', 'shocked-sound-effect'], ['🔩 鋼管落地', 'gang-guan-luo-di'], ['💪 館長', 'guan-chang'], null,   // removed: a swear word, not for kids
   ['🧽 海綿寶寶失敗', 'spongebob-fail'], ['🔪 Among Us', 'among-us-role-reveal-sound'], ['❌ 系統錯誤', 'windows-xp-error'], ['💨 放屁', 'dry-fart']];
 const boardUrl = k => `https://www.myinstants.com/media/sounds/${BOARD[k][1]}.mp3`;
 // One shared <audio> player. MyInstants files can't go through Web Audio (no CORS), and phones only let a page play
@@ -1666,7 +1701,7 @@ function playBoardSound(k) {
   } catch (_) {}
 }
 $('tauntChips').innerHTML = TAUNTS.slice(0, 10).map((x, k) => `<button type="button" data-k="${k}">${x}</button>`).join('');
-$('boardChips').innerHTML = BOARD.map(([label], k) => `<button type="button" data-b="${k}">${label}</button>`).join('');
+$('boardChips').innerHTML = BOARD.map((b, k) => b ? `<button type="button" data-b="${k}">${b[0]}</button>` : '').join('');
 let lastTaunt = 0;
 // Before the friend arrives you can still try taunts / sounds / stickers: they play on your own screen only.
 function previewNote() {
@@ -1740,9 +1775,26 @@ function say(text, mine, chat) {
   d.textContent = text;
   document.body.appendChild(d);
   const w = d.offsetWidth, h = d.offsetHeight, onScreen = c.bottom > 20 && c.top < innerHeight - 100;
-  const x = !onScreen ? (innerWidth - w) / 2 : mine ? Math.min(av.right + 16, innerWidth - w - 6) : Math.max(av.left - 16 - w, 6);
-  const y = !onScreen ? innerHeight * .4 : Math.max(4, Math.min(c.top + c.height / 2 - h / 2, boardTop - h - 8));
-  Object.assign(d.style, { left: x + 'px', top: y + 'px', transformOrigin: mine ? '0% 50%' : '100% 50%' });
+  // same rule as sticker bubbles: never over the avatar, the name or the trophies
+  const span = el => { const r = document.createRange(); r.selectNodeContents(el); const b = r.getBoundingClientRect(); return b.width ? b : null; };
+  const stkEl = document.querySelector('.sticker-show.bubble:not(.below).' + (mine ? 'me' : 'opp'));
+  const parts = [av, span(who.querySelector('.who')), span(who.querySelector('.caps')), stkEl && restBox(stkEl)].filter(Boolean);
+  const inner = mine ? Math.max(...parts.map(b => b.right)) : Math.min(...parts.map(b => b.left));
+  const free = mine ? c.right - inner - 20 : inner - c.left - 20;
+  let x, y, origin;
+  if (!onScreen) { x = (innerWidth - w) / 2; y = innerHeight * .4; origin = '50% 50%'; }
+  else if (w <= free) {   // wide card: in its empty part, after the name
+    x = mine ? inner + 16 : inner - 16 - w;
+    y = Math.max(4, Math.min(c.top + c.height / 2 - h / 2, boardTop - h - 8));
+    origin = mine ? '0% 50%' : '100% 50%';
+  } else {   // narrow card (phone): under the avatar, below any sticker already showing on that side
+    const stk = document.querySelector('.sticker-show.' + (mine ? 'me' : 'opp'));
+    y = (stk ? restBox(stk).bottom : c.bottom) + 12;
+    x = mine ? Math.max(6, Math.min(av.left + av.width / 2 - 28, innerWidth - w - 6)) : Math.min(innerWidth - 6 - w, Math.max(6, av.right - av.width / 2 + 28 - w));
+    origin = mine ? '20% 0%' : '80% 0%';
+    d.classList.add('below');
+  }
+  Object.assign(d.style, { left: x + 'px', top: y + 'px', transformOrigin: origin });
   if (reduced) { setTimeout(() => d.remove(), 2400); return; }
   d.animate([{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1.15)', opacity: 1, offset: .1 }, { transform: 'scale(1)', opacity: 1, offset: .18 },
     { transform: 'scale(1)', opacity: 1, offset: .85 }, { transform: 'translateY(-16px)', opacity: 0 }], { duration: chat ? Math.min(7000, 2600 + text.length * 120) : 2600, easing: 'ease-out' }).onfinish = () => d.remove();
@@ -1868,7 +1920,7 @@ $('chatForm').onsubmit = e => {
   if (mode === 'watch' || chan === 'pub') {
     if (lvl !== 'chat' || !mq || !mq.connected) { toast('公開聊天沒有開放'); return; }
     if (mode === 'watch' && !hadProfile && !profileShown) { profileShown = true; openProfile(); toast('先幫自己取個名字吧'); return; }   // the message stays in the box
-    mq.publish(pubTopic(), JSON.stringify({ type: 'pub', id: rid(), w: myId, n: myName(), r: mode, text: v }), { qos: 1 });
+    pubSigned(pubTopic(), { type: 'pub', id: rid(), n: myName(), r: mode, text: v }, { qos: 1 });
     addChat('me', v, true, myName() + (mode === 'host' ? '（房主）' : mode === 'watch' ? '（觀眾）' : ''), mode === 'watch' ? null : 'me'); $('chatInput').value = '';
     return;
   }
@@ -1900,6 +1952,86 @@ function remember(id) {   // ids of messages already handled; bounded so a flood
 let mq = null, lastHeard = 0, heard = { p2p: 0, relay: 0 }, gotState = false, startedAt = Date.now(), timers = [];
 const rid = () => Math.random().toString(36).slice(2, 12);
 const online = () => Date.now() - lastHeard < 12000;
+// ---------- signed messages ----------
+// Anyone who knows a room code can publish on its relay topics, so every game, spectator, public-chat and lobby
+// message is signed (ECDSA P-256) and receivers trust only the keys they expect: the host's key is pinned by the
+// fingerprint in the invite link (or the first one heard), and the seated guest is known by its key, not a claimed id.
+const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64u = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), ch => ch.charCodeAt(0));
+const EC = { name: 'ECDSA', namedCurve: 'P-256' }, SIG = { name: 'ECDSA', hash: 'SHA-256' };
+const FP_RE = /^[0-9a-f]{16}$/;
+let myPriv = null, myPub = '', keyProof = '';
+const fpOf = async pub => (await sha256(pub)).slice(0, 16);
+async function loadKeys() {
+  const k = 'bq-key-' + (room || 'lobby');
+  try { const j = JSON.parse(idStore.get(k)); if (j && j.pub && j.priv) { myPriv = await crypto.subtle.importKey('jwk', j.priv, EC, false, ['sign']); myPub = j.pub; } } catch (_) { myPriv = null; }
+  if (!myPriv) {
+    const kp = await crypto.subtle.generateKey(EC, true, ['sign', 'verify']);
+    myPub = b64u(await crypto.subtle.exportKey('raw', kp.publicKey));
+    idStore.set(k, JSON.stringify({ pub: myPub, priv: await crypto.subtle.exportKey('jwk', kp.privateKey) }));
+    myPriv = kp.privateKey;
+  }
+  myId = await fpOf(myPub);
+  await updateKeyProof();
+}
+// proves the room password to the host without ever putting the key on the relay; bound to my key, so useless to anyone else
+async function updateKeyProof() {
+  keyProof = roomKey && myId ? (await sha256(roomKey + '|' + myId)).slice(0, 32) : '';
+  // Topic names are visible to anyone subscribed to the room, so they carry a hash of the key, never the key;
+  // and on a locked room the spectator / public-chat / audience channels are encrypted with a key derived from it.
+  topicSfx = roomKey ? (await sha256('topic|' + roomKey)).slice(0, 16) : '';
+  roomAes = roomKey ? await crypto.subtle.importKey('raw', new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('enc|' + roomKey))), 'AES-GCM', false, ['encrypt', 'decrypt']) : null;
+}
+let topicSfx = '', roomAes = null;
+async function lockBox(obj) {   // locked room: the JSON is AES-GCM encrypted for key holders only
+  if (!roomAes) return obj;
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  return { x: b64u(iv) + '.' + b64u(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, roomAes, new TextEncoder().encode(JSON.stringify(obj)))) };
+}
+async function openBox(obj) {
+  if (!obj || typeof obj.x !== 'string') return roomAes ? null : obj;   // a locked room accepts nothing in the clear
+  if (!roomAes) return null;
+  try { const [iv, ct] = obj.x.split('.'); return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64u(iv) }, roomAes, unb64u(ct)))); } catch (_) { return null; }
+}
+async function seal(obj) {
+  const p = JSON.stringify(obj);
+  return { p, k: myPub, s: b64u(await crypto.subtle.sign(SIG, myPriv, new TextEncoder().encode(p))) };
+}
+const keyCache = new Map();
+async function unseal(env) {   // { m, fp } for a correctly signed message, otherwise null
+  try {
+    if (!env || typeof env.p !== 'string' || typeof env.k !== 'string' || typeof env.s !== 'string' || env.p.length > 60000 || env.k.length > 120 || env.s.length > 120) return null;
+    let key = keyCache.get(env.k);
+    if (!key) { key = await crypto.subtle.importKey('raw', unb64u(env.k), EC, false, ['verify']); if (keyCache.size > 300) keyCache.clear(); keyCache.set(env.k, key); }
+    if (!await crypto.subtle.verify(SIG, key, unb64u(env.s), new TextEncoder().encode(env.p))) return null;
+    const m = JSON.parse(env.p);
+    return m && typeof m === 'object' && !Array.isArray(m) ? { m, fp: await fpOf(env.k) } : null;
+  } catch (_) { return null; }
+}
+let hostFp = (() => { const f = qs.get('f'); return FP_RE.test(f || '') ? f : ''; })();
+const hostFpKey = () => 'bq-hostfp-' + room;
+function trustHost(fp) {   // guest / spectator: is this the host we expect? (pins the first one if the link had no fingerprint)
+  if (!hostFp) { const pinned = store.get(hostFpKey()); hostFp = FP_RE.test(pinned || '') ? pinned : fp; }
+  store.set(hostFpKey(), hostFp);
+  return fp === hostFp;
+}
+let recvQ = Promise.resolve(), foreignAt = 0;
+// every message on the game channel, from either transport, verified and handled in arrival order
+function incoming(env, ch, onAccept) {
+  recvQ = recvQ.then(async () => {
+    const r = await unseal(env);
+    if (!r) return null;
+    if (mode === 'host') {
+      const g = await acceptGuest(r.fp, r.m.kp);
+      if (g !== true) { if (!onAccept) send({ type: g, to: r.fp }); return { reject: g, to: r.fp }; }
+    } else if (mode !== 'guest') return null;
+    else if (!trustHost(r.fp)) { foreignAt = Date.now(); return null; }   // signed, but not by the host this link belongs to
+    if (onAccept) onAccept();
+    receive(r.m, ch);
+    return true;
+  }).catch(() => null);
+  return recvQ;
+}
 const outbox = [];
 function flushOutbox() {
   while (outbox.length) send({ type: 'chat', text: outbox.shift() });
@@ -1910,23 +2042,31 @@ function flushOutbox() {
 const forGuest = st => Object.assign({}, st, { board: st.board.map(x => (x && !x.up ? { up: false } : x)),
   fair: st.fair && (st.winner ? st.fair : { c: st.fair.c, gs: st.fair.gs }) });
 const sendState = () => send({ type: 'state', state: forGuest(state) });
-const validState = st => !!st && Array.isArray(st.board) && st.board.length === 32 && typeof st.seq === 'number' &&
-  typeof st.gid === 'string' && (st.turn === 'host' || st.turn === 'guest') && !!st.captured && Array.isArray(st.captured.r) && Array.isArray(st.captured.b);
+const PT = ['K', 'A', 'E', 'R', 'H', 'C', 'P'], COL = ['r', 'b'];
+const okPiece = x => x === null || (!!x && typeof x === 'object' && (x.up === false ? (x.t === undefined || PT.includes(x.t)) && (x.c === undefined || COL.includes(x.c)) : x.up === true && PT.includes(x.t) && COL.includes(x.c)));
+const sqOk = v => v === undefined || (Number.isInteger(v) && v >= 0 && v < 32);
+const validState = st => !!st && typeof st === 'object' && Array.isArray(st.board) && st.board.length === 32 && st.board.every(okPiece) &&
+  Number.isFinite(st.seq) && typeof st.gid === 'string' && st.gid.length <= 24 && (st.turn === 'host' || st.turn === 'guest') && Number.isInteger(st.moveNo) && st.moveNo >= 0 &&
+  (st.colors == null || (typeof st.colors === 'object' && COL.includes(st.colors.host) && COL.includes(st.colors.guest))) &&
+  !!st.captured && COL.every(c => Array.isArray(st.captured[c]) && st.captured[c].length <= 16 && st.captured[c].every(t => PT.includes(t))) &&
+  (st.winner == null || ['host', 'guest', 'draw'].includes(st.winner)) &&
+  (st.last == null || (typeof st.last === 'object' && sqOk(st.last.i) && sqOk(st.last.from) && sqOk(st.last.to)));
 const deadGids = new Set();
 // The guest tells the host which game/move it has; the host answers with the full state if the guest is behind.
 const syncReq = type => send({ type, gid: state ? state.gid : null, seq: state ? state.seq : -1 });
+let sendQ = Promise.resolve();
 function send(msg) {
   if (mode !== 'host' && mode !== 'guest') return;
   msg.id = rid();
-  if (mode === 'guest') { msg.from = myId; if (roomKey) msg.k = roomKey; }
+  if (mode === 'guest' && keyProof) msg.kp = keyProof;
   if (mode === 'host' && msg.type === 'ping') { msg.lvl = cfg.watch; msg.aud = audN; msg.rk = cfg.key || ''; }   // the seated guest learns the current key
   if (mode === 'host' && FWD.includes(msg.type)) pubWatchEv('host', msg);
   if (mode !== 'local' && (msg.type === 'ping' || msg.type === 'hello' || msg.type === 'profile')) msg.pf = myPf();
-  if (conn && conn.open) { try { conn.send(msg); } catch (_) {} }
-  if (mq && mq.connected) {
-    const relayMsg = 'rk' in msg ? Object.assign({}, msg, { rk: undefined }) : msg;   // the key never goes on the public relay
-    mq.publish(topic(mode === 'host' ? 'guest' : 'host'), JSON.stringify(relayMsg), { qos: 1 });
-  }
+  const relayMsg = 'rk' in msg ? Object.assign({}, msg, { rk: undefined }) : msg;   // the key never goes on the public relay
+  sendQ = sendQ.then(async () => {   // signing is async; the queue keeps messages in order
+    if (conn && conn.open) { try { conn.send(await seal(msg)); } catch (_) {} }
+    if (mq && mq.connected) mq.publish(topic(mode === 'host' ? 'guest' : 'host'), JSON.stringify(await seal(relayMsg)), { qos: 1 });
+  }).catch(() => {});
 }
 function setConn(text, kind) {
   if (setConn.v === text + kind) return;
@@ -1943,6 +2083,7 @@ function updateConn() {
   const now = Date.now(), via = now - heard.p2p < 12000 ? '（直連）' : now - heard.relay < 12000 ? '（中繼）' : '';
   if (mode === 'watch') { setConn(watchInfo ? '👀 觀戰中' : watchOff ? '房主沒有開放觀戰' : '連線中…', watchInfo ? 'on' : 'wait'); return; }
   if (mode === 'host' && pubLobby.st !== (online() ? 'play' : 'wait')) pubLobby();
+  if (mode === 'guest' && !online() && Date.now() - foreignAt < 20000) { setConn('房主的身分變了（可能換了瀏覽器或清除了資料），請向房主要新的邀請連結', 'wait'); return; }
   if (online()) setConn(t('connected') + via, 'on');
   else if (mode === 'host') setConn(t('waiting'), 'wait');
   else if (gotState) setConn(t('disconnected'), 'wait');
@@ -1951,12 +2092,8 @@ function updateConn() {
 
 function receive(m, ch) {
   if (ch) heard[ch] = Date.now();
-  if (!m || typeof m !== 'object' || !m.id || seen.has(m.id)) return;
+  if (!m || typeof m !== 'object' || typeof m.id !== 'string' || seen.has(m.id)) return;   // signature and seat were checked in incoming()
   remember(m.id);
-  if (mode === 'host') {   // everything on the host's channel must say who sent it, and that sender must own the seat
-    if (typeof m.from !== 'string' || !/^[a-z0-9]{6,16}$/.test(m.from)) return;
-    const g = acceptGuest(m.from, m.k); if (g !== true) { send({ type: g, to: m.from }); return; }
-  }
   if (mode === 'guest' && m.type === 'badpw') { if (m.to === myId) needPassword('密碼不對，請再輸入一次'); return; }
   if (mode === 'guest' && typeof m.rk === 'string' && /^([0-9a-f]{16})?$/.test(m.rk) && m.rk !== roomKey) setRoomKey(m.rk);
   if (mode === 'guest' && m.type === 'full') { if (m.to === myId) roomFull(); return; }
@@ -1970,9 +2107,13 @@ function receive(m, ch) {
   if (mode === 'host') {
     if (m.type === 'hello' || m.type === 'ping') { if (m.type === 'hello' || m.gid !== state.gid || !(m.seq >= state.seq)) sendState(); if (m.type === 'hello') { send({ type: 'profile' }); ensureFair(); } }
     else if (m.type === 'action') {
-      const go = () => { const r = B.apply(state, 'guest', m.action); if (r.ok) commit(r.state); else sendState(); };
+      const go = () => {
+        const fresh = m.gid === undefined || (m.gid === state.gid && m.n === state.moveNo);   // an action from an older game or position is dropped
+        const r = fresh ? B.apply(state, 'guest', m.action) : { ok: false };
+        if (r.ok) commit(r.state); else { send({ type: 'reject', gid: m.gid, n: m.n }); sendState(); }
+      };
       if (seedBusy) seedBusy.then(go); else go();
-    } else if (m.type === 'seed') takeSeed(m); else if (m.type === 'reset') { if (m.gid === state.gid) resetGame(); }
+    } else if (m.type === 'seed') takeSeed(m); else if (m.type === 'reset') { if (m.gid === state.gid) guestWantsReset(); }
     else if (m.type === 'resign') { if (m.gid === state.gid) doResign('guest'); }
     else if (m.type === 'undoReq') onUndoRequest(m);
     else if (m.type === 'undoAns') onUndoAnswer(m);
@@ -1990,16 +2131,21 @@ function receive(m, ch) {
       const rejected = pend && state !== pend.base && s.gid === pend.gid && s.seq === pend.base.seq;   // the host refused the move we showed early
       if (state && s.gid === state.gid && s.seq <= state.seq && !rejected) return; // older or same state arriving on the slower channel
       if (pend && (rejected || s.gid !== pend.gid || s.moveNo !== pend.n)) endPend();
-      if (state && s.gid !== state.gid) deadGids.add(state.gid);    // a new game (or the host started over): never go back to the old one
+      if (state && s.gid !== state.gid) {   // a new game (or the host started over): never go back to the old one
+        deadGids.add(state.gid);
+        redeals = state.moveNo === 0 && state.fair && state.fair.gs ? redeals + 1 : 0;
+        redealsBefore[s.gid] = redeals;
+      }
       const first = !state;
       state = s; gotState = true;
       if (sel != null && !(state.board[sel] && state.board[sel].up && state.turn === 'guest')) sel = null;
       if (first) prev = null;
       if (state.moveNo === 0) hideOver();
-      if (undoPending && state.moveNo !== undoPending) undoPending = 0;
       guestFair(s);
       render(!first);
-    } else if (m.type === 'chat') addChat('friend', String(m.text).slice(0, 200), false, '', 'opp');
+    } else if (m.type === 'reject') { if (pend && m.gid === pend.gid && m.n === pend.n) refusePend(); }
+    else if (m.type === 'resetNo') toast(oppName() + '不同意重新開局');
+    else if (m.type === 'chat') addChat('friend', String(m.text).slice(0, 200), false, '', 'opp');
     else if (m.type === 'react') floatEmoji(m.e, false);
     else if (m.type === 'sticker') showSticker(m, false);
     else if (m.type === 'undoReq') onUndoRequest(m);
@@ -2029,11 +2175,12 @@ function startRelay(k = 0) {
   });
   c.on('message', (tp, payload) => {
     const raw = payload.toString();
-    if (tp === watchTopic()) { if (!raw) onWatch(null); else try { onWatch(JSON.parse(raw)); } catch (_) {} return; }
+    if (raw.length > 64000) return;
+    if (tp === watchTopic()) { if (!raw) onWatch(null); else try { const env = JSON.parse(raw); watchQ = watchQ.then(() => openBox(env)).then(unseal).then(r => { if (r && trustHost(r.fp)) onWatch(r.m); }).catch(() => {}); } catch (_) {} return; }
     let m; try { m = JSON.parse(raw); } catch (_) { return; }
-    if (tp === audTopic()) onAud(m);
+    if (tp === audTopic()) openBox(m).then(onAud);
     else if (tp === pubTopic()) onPub(m);
-    else receive(m, 'relay');
+    else incoming(m, 'relay');
   });
   const retry = () => { if (mq === c) mq = null; c.end(true); setTimeout(() => startRelay(ok ? k : k + 1), ok ? 1500 : 500); };
   c.on('close', () => { if (!c._retried) { c._retried = true; retry(); } });
@@ -2046,12 +2193,9 @@ function startP2P() {
   if (mode === 'host') {
     peer = new Peer(hostId(), PEER_OPTS);
     peer.on('connection', c => {
-      c.on('data', m => {
-        if (!m || typeof m.from !== 'string') return;
-        const g = acceptGuest(m.from, m.k);
-        if (g !== true) { try { c.send({ type: g, to: m.from, id: rid() }); } catch (_) {} setTimeout(() => c.close(), 300); return; }
-        conn = c; receive(m, 'p2p');
-      });
+      c.on('data', env => incoming(env, 'p2p', () => { conn = c; }).then(async res => {
+        if (res && res.reject) { try { c.send(await seal({ type: res.reject, to: res.to, id: rid() })); } catch (_) {} setTimeout(() => c.close(), 300); }
+      }));
       c.on('close', () => { if (conn === c) conn = null; });
     });
     peer.on('error', err => { if (err.type === 'unavailable-id') { peer.destroy(); setTimeout(startP2P, 4000); } }); // old tab still holds the id after a reload
@@ -2065,7 +2209,7 @@ function startP2P() {
 function connectToHost() {
   const c = peer.connect(hostId(), { reliable: true });
   c.on('open', () => { conn = c; syncReq('hello'); });
-  c.on('data', m => receive(m, 'p2p'));
+  c.on('data', env => incoming(env, 'p2p'));
   c.on('close', () => { if (conn === c) conn = null; scheduleRetry(); });
 }
 function scheduleRetry() { clearTimeout(retryTimer); retryTimer = setTimeout(() => { if (peer && !peer.destroyed && peer.open && !(conn && conn.open)) connectToHost(); }, 5000); }
@@ -2104,7 +2248,7 @@ async function hashKey(r, pw) {
   const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(r + '|' + pw));
   return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
 }
-const keySuffix = () => (roomKey ? '-' + roomKey : '');
+const keySuffix = () => (topicSfx ? '-' + topicSfx : '');
 const watchTopic = () => topic('watch' + keySuffix()), pubTopic = () => topic('pub' + keySuffix()), audTopic = () => topic('aud' + keySuffix());
 async function askKey(r) {
   const pw = await ask('這個房間有密碼，請輸入：', '進入', '取消', true);
@@ -2118,25 +2262,26 @@ function needPassword(msg) {
   $('status').innerHTML = '';
   $('status').append(msg + ' ');
   const b = document.createElement('a'); b.href = '#'; b.textContent = '輸入密碼'; b.style.color = 'var(--gold)';
-  b.onclick = e => { e.preventDefault(); askKey(room).then(k => { if (k) location.href = '?room=' + room + (mode === 'watch' ? '&watch=1' : '') + '&k=' + k; }); };
+  b.onclick = e => { e.preventDefault(); askKey(room).then(k => { if (k) location.href = '?room=' + room + (mode === 'watch' ? '&watch=1' : '') + '&k=' + k + (hostFp ? '&f=' + hostFp : ''); }); };
   $('status').appendChild(b);
 }
 // switch the channels this browser listens on when the key changes
-function setRoomKey(k) {
+async function setRoomKey(k) {
   const oldPub = pubTopic(), oldAud = audTopic(), oldWatch = watchTopic();
   if (mode === 'host' && pubWatch.on) pubRetained(oldWatch, null);   // take the board off the old spectator channel
   roomKey = k;
+  await updateKeyProof();
   if (mq && mq.connected) {
     mq.unsubscribe([oldPub].concat(mode === 'host' ? [oldAud] : []));
     mq.subscribe([pubTopic()].concat(mode === 'host' ? [audTopic()] : []), { qos: 1 });
   }
 }
-function updateShareLink() { $('shareLink').value = location.origin + location.pathname + '?room=' + room + (cfg.key ? '&k=' + cfg.key : ''); }
+function updateShareLink() { $('shareLink').value = location.origin + location.pathname + '?room=' + room + (cfg.key ? '&k=' + cfg.key : '') + (myId && FP_RE.test(myId) ? '&f=' + myId : ''); }
 $('cfgPwSave').onclick = async () => {
   const pw = wordSafe($('cfgPw').value);
   cfg.pw = pw; cfg.key = pw ? await hashKey(room, pw) : '';
   saveCfg();
-  setRoomKey(cfg.key);
+  await setRoomKey(cfg.key);
   updateShareLink();
   pubWatch(); pubLobby(true); send({ type: 'ping' });
   toast(pw ? '已設定密碼，邀請連結和觀戰連結已自動帶上通關碼' : '已取消密碼');
@@ -2158,9 +2303,9 @@ const playerName = role => {
   return role === mode ? myName() : oppName();
 };
 // the first guest owns the seat; someone else may take it only after the seat has been silent for a minute
-function acceptGuest(from, k) {
+async function acceptGuest(from, kp) {
   const now = Date.now();
-  if (cfg.key && cfg.guest !== from && k !== cfg.key) return 'badpw';   // a new seat needs the password; the seated friend keeps playing
+  if (cfg.key && cfg.guest !== from && kp !== (await sha256(cfg.key + '|' + from)).slice(0, 32)) return 'badpw';   // a new seat needs the password; the seated friend keeps playing
   if (!cfg.guest || cfg.guest === from || now - (cfg.guestSeen || 0) > 60000) {
     if (cfg.guest !== from) { cfg.guest = from; saveCfg(); }
     if (now - (cfg.guestSeen || 0) > 5000) { cfg.guestSeen = now; saveCfg(); } else cfg.guestSeen = now;
@@ -2174,12 +2319,14 @@ function roomFull() {
   setConn('房間已滿', 'wait');
   $('status').innerHTML = '這個房間已經有兩位玩家了。<a href="?room=' + room + '&watch=1" style="color:var(--gold)">改成觀戰</a>';
 }
-function pubRetained(tp, obj) { if (mq && mq.connected) mq.publish(tp, obj ? JSON.stringify(obj) : '', { qos: 1, retain: true }); }
+let pubQ = Promise.resolve(), watchQ = Promise.resolve();
+function pubSigned(tp, obj, opts) { const c = mq; if (!c || !c.connected) return; pubQ = pubQ.then(async () => { if (!obj) c.publish(tp, '', opts); else c.publish(tp, JSON.stringify(tp.startsWith('banqi-tw/v1/lobby/') ? await seal(obj) : await lockBox(await seal(obj))), opts); }).catch(() => {}); }
+function pubRetained(tp, obj) { pubSigned(tp, obj, { qos: 1, retain: true }); }
 function pubWatch() {
   if (mode !== 'host' || !state) return;
   if (cfg.watch === 'off') { if (pubWatch.on) { pubRetained(watchTopic(), null); pubWatch.on = false; } return; }
   pubWatch.on = true;
-  pubRetained(watchTopic(), { type: 'wstate', id: rid(), ts: Date.now(), state: forGuest(state), h: myPf(), g: oppProfile ? { n: oppProfile.name, a: oppProfile.av } : null, lvl: cfg.watch, aud: audN });
+  pubRetained(watchTopic(), { type: 'wstate', id: rid(), ts: Date.now(), state: forGuest(state), h: myPf(), g: oppProfile ? { n: oppProfile.name, a: oppProfile.av } : null, lvl: cfg.watch, aud: audN, gfp: cfg.guest || '' });
 }
 function pubWatchEv(from, ev) {
   if (mode !== 'host' || (cfg.watch !== 'fun' && cfg.watch !== 'chat') || !mq || !mq.connected) return;
@@ -2188,7 +2335,7 @@ function pubWatchEv(from, ev) {
   else if (ev.type === 'react') { if (!EMOJI.includes(ev.e)) return; e = { type: 'react', e: ev.e }; }
   else if (ev.type === 'taunt' || ev.type === 'board') { if (!Number.isInteger(ev.k)) return; e = { type: ev.type, k: ev.k }; }
   else return;
-  mq.publish(watchTopic(), JSON.stringify({ type: 'wev', id: rid(), from, ev: e }), { qos: 0 });
+  pubSigned(watchTopic(), { type: 'wev', id: rid(), from, ev: e }, { qos: 0 });
 }
 function pubLobby(force) {
   if (mode !== 'host') return;
@@ -2199,14 +2346,18 @@ function pubLobby(force) {
 }
 // audience: spectators say hello every 10 s; the host counts who was heard in the last 25 s
 const audSeen = {};
-function onAud(m) { if (mode === 'host' && m && typeof m.w === 'string') { audSeen[m.w.slice(0, 16)] = Date.now(); countAud(); } }
+function onAud(m) {
+  if (mode !== 'host' || !m || typeof m.w !== 'string' || !(FP_RE.test(m.w) || ID_RE.test(m.w))) return;
+  if (!(m.w in audSeen) && Object.keys(audSeen).length >= 300) return;   // a flood of made-up ids can't grow this forever
+  audSeen[m.w] = Date.now(); clearTimeout(onAud.t); onAud.t = setTimeout(countAud, 300);
+}
 function countAud() {
   const now = Date.now();
   for (const k in audSeen) if (now - audSeen[k] > 60000) delete audSeen[k];
   const n = Object.values(audSeen).filter(t0 => now - t0 < 25000).length;
   if (n !== audN) { audN = n; updateAudInfo(); pubWatch(); pubLobby(); send({ type: 'ping' }); }
 }
-function audPing() { if (mode === 'watch' && mq && mq.connected) mq.publish(audTopic(), JSON.stringify({ id: rid(), w: myId }), { qos: 0 }); }
+function audPing() { const c = mq; if (mode === 'watch' && c && c.connected && myId) lockBox({ id: rid(), w: myId }).then(b => c.connected && c.publish(audTopic(), JSON.stringify(b), { qos: 0 })); }
 function updateAudInfo() {
   let txt = '';
   if (mode === 'host' || mode === 'guest') txt = lvl === 'off' ? '' : `觀戰：${LVL_NAME[lvl]}${audN ? '・👀 ' + audN : ''}`;
@@ -2226,19 +2377,23 @@ function updateAudInfo() {
 function setChan(c) {
   chan = c;
   document.querySelectorAll('#chanRow button').forEach(b => b.classList.toggle('on', b.dataset.ch === c));
-  $('chatInput').placeholder = c === 'pub' ? '公開聊天（觀眾也看得到）' : '私人訊息（只有你們兩個看得到）';
+  $('chatInput').placeholder = c === 'pub' ? '公開聊天（觀眾也看得到）' : '私人訊息（觀眾看不到）';
 }
 $('chanRow').onclick = e => { const b = e.target.closest('[data-ch]'); if (b) setChan(b.dataset.ch); };
-function onPub(m) {
-  if (!m || m.type !== 'pub' || typeof m.text !== 'string' || !m.id || seen.has(m.id) || m.w === myId) return;
+let pubInQ = Promise.resolve();
+function onPub(env) { pubInQ = pubInQ.then(() => openBox(env)).then(unseal).then(r => { if (r) showPub(r.m, r.fp); }).catch(() => {}); }
+function showPub(m, w) {
+  if (m.type !== 'pub' || typeof m.text !== 'string' || typeof m.id !== 'string' || seen.has(m.id) || w === myId) return;
   remember(m.id);
-  if (lvl !== 'chat' || typeof m.w !== 'string' || !ID_RE.test(m.w) || mutedIds.has(m.w)) return;
+  if (lvl !== 'chat' || mutedIds.has(w)) return;
+  const knownHost = mode === 'host' ? myId : hostFp, knownGuest = mode === 'host' ? cfg.guest : mode === 'guest' ? myId : watchInfo && watchInfo.gfp;
+  m.r = m.r === 'host' && w === knownHost ? 'host' : m.r === 'guest' && w && w === knownGuest ? 'guest' : 'watch';   // a claimed role needs the matching key
   const player = m.r === 'host' || m.r === 'guest', who = m.r === 'host' ? '（房主）' : player ? '' : '（觀眾）';
   const side = !player ? null : mode === 'watch' ? (m.r === 'host' ? 'me' : 'opp') : 'opp';
-  addChat('them', m.text.slice(0, 200), true, cleanName(m.n) + who, side, m.w);
+  addChat('them', m.text.slice(0, 200), true, cleanName(m.n) + who, side, w);
 }
 // Muting is per browser: it hides that person's public messages from you only.
-const ID_RE = /^[a-z0-9]{6,16}$/;
+const ID_RE = /^[a-z0-9]{6,16}$/;   // fingerprints (16 hex) also match
 const mutedIds = new Set((() => { try { return JSON.parse(store.get('bq-blocked')) || []; } catch (_) { return []; } })().filter(x => ID_RE.test(x)));
 const saveMuted = () => { store.set('bq-blocked', JSON.stringify([...mutedIds].slice(-300))); updateMuteBar(); };
 function updateMuteBar() { $('muteN').textContent = mutedIds.size; $('muteBar').classList.toggle('hidden', !mutedIds.size); }
@@ -2264,7 +2419,7 @@ function onWatch(m) {
     if (!validState(m.state) || !LVL_NAME[m.lvl]) return;
     watchOff = false;
     const clean = x => (x && typeof x === 'object' ? { n: cleanName(x.n), a: AVATARS.includes(x.a) ? x.a : null } : null);
-    watchInfo = { h: clean(m.h), g: clean(m.g), lvl: m.lvl, aud: typeof m.aud === 'number' ? m.aud : 0 };
+    watchInfo = { h: clean(m.h), g: clean(m.g), lvl: m.lvl, aud: typeof m.aud === 'number' ? Math.min(999, m.aud) : 0, gfp: FP_RE.test(m.gfp || '') ? m.gfp : '' };
     lvl = m.lvl;
     const s2 = m.state, first = !state;
     if (first || s2.gid !== state.gid || s2.seq > state.seq) {
@@ -2308,11 +2463,11 @@ $('cfgLobby').onchange = () => { cfg.lobby = $('cfgLobby').checked; saveCfg(); p
 $('cfgWatch').onchange = () => { cfg.watch = $('cfgWatch').value; lvl = cfg.watch; saveCfg(); pubWatch(); pubLobby(); updateAudInfo(); send({ type: 'ping' }); };
 $('watchLinkBtn').onclick = () => {
   if (cfg.watch === 'off') { toast('先把觀戰打開'); return; }
-  const v = location.origin + location.pathname + '?room=' + room + '&watch=1' + (cfg.key ? '&k=' + cfg.key : '');
+  const v = location.origin + location.pathname + '?room=' + room + '&watch=1' + (cfg.key ? '&k=' + cfg.key : '') + '&f=' + myId;
   (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(() => toast('已複製觀戰連結'), () => toast(v, 5000));
 };
 // lobby list on the home page
-let lobbyClient = null;
+let lobbyClient = null, lobbyQ = Promise.resolve();
 const lobbyRooms = {};
 function startLobbyView(k = 0) {
   if (typeof mqtt === 'undefined' || mode) return;
@@ -2324,9 +2479,18 @@ function startLobbyView(k = 0) {
     const r = tp.split('/').pop();
     if (!/^[a-z0-9]{6}$/.test(r)) return;
     const raw = payload.toString();
-    if (!raw) delete lobbyRooms[r];
-    else try { const m = JSON.parse(raw); if (m && m.room === r) { if (!(packet && packet.retain)) m._live = Date.now(); else m._live = 0; lobbyRooms[r] = m; } } catch (_) {}
-    renderRooms();
+    if (!raw) { delete lobbyRooms[r]; renderRooms(); return; }
+    if (raw.length > 4000) return;
+    const live = !(packet && packet.retain);
+    let env; try { env = JSON.parse(raw); } catch (_) { return; }
+    lobbyQ = lobbyQ.then(() => unseal(env)).then(res => {
+      if (!res) return;
+      const m = res.m;
+      if (m.room !== r || typeof m.ts !== 'number' || m.ts > Date.now() + 60000) return;   // a card dated in the future would never expire
+      if (!lobbyRooms[r] && Object.keys(lobbyRooms).length >= 80) return;
+      m._live = live ? Date.now() : 0; m._fp = res.fp;
+      lobbyRooms[r] = m; renderRooms();
+    }).catch(() => {});
   });
   c.on('close', () => { if (lobbyClient === c && !mode) setTimeout(() => startLobbyView(ok ? k : k + 1), 1500); });
   c.on('error', () => {});
@@ -2348,8 +2512,8 @@ function renderRooms() {
     const lv = LVL_NAME[m.lvl] ? m.lvl : 'off';
     const st = m.st === 'play' ? `對戰中${lv !== 'off' ? '・觀戰：' + LVL_NAME[lv] : ''}${m.aud ? '・👀 ' + (+m.aud || 0) : ''}` : '等待對手加入';
     return `<div class="room"><div class="rav">${av ? stkArt(av) : ''}</div><div class="rinfo"><div class="rname">${m.lock ? '🔒 ' : ''}${esc(cleanName(m.n) || '玩家')}</div><div class="rst">${st}</div></div>` +
-      (m.st !== 'play' ? `<button class="primary" data-join="${m.room}" data-lock="${m.lock ? 1 : ''}">加入對戰</button>` : '') +
-      (lv !== 'off' ? `<button data-watch="${m.room}" data-lock="${m.lock ? 1 : ''}">觀戰</button>` : '') + '</div>';
+      (m.st !== 'play' ? `<button class="primary" data-join="${m.room}" data-lock="${m.lock ? 1 : ''}" data-fp="${FP_RE.test(m._fp) ? m._fp : ''}">加入對戰</button>` : '') +
+      (lv !== 'off' ? `<button data-watch="${m.room}" data-lock="${m.lock ? 1 : ''}" data-fp="${FP_RE.test(m._fp) ? m._fp : ''}">觀戰</button>` : '') + '</div>';
   }).join('');
 }
 setInterval(renderRooms, 10000);
@@ -2358,15 +2522,16 @@ $('roomList').onclick = e => {
   const b = j || w;
   if (!b) return;
   const r = b.dataset.join || b.dataset.watch;
-  (b.dataset.lock ? askKey(r) : Promise.resolve('')).then(k => { if (k === null) return; location.href = '?room=' + r + (w ? '&watch=1' : '') + (k ? '&k=' + k : ''); });
+  const f = FP_RE.test(b.dataset.fp || '') ? '&f=' + b.dataset.fp : '';
+  (b.dataset.lock ? askKey(r) : Promise.resolve('')).then(k => { if (k === null) return; location.href = '?room=' + r + (w ? '&watch=1' : '') + (k ? '&k=' + k : '') + f; });
 };
 
 // recent games: remember where I played (with my role, so a host can come back as host)
 const RECENT_KEY = 'bq-recent';
-function recentList() { try { return (JSON.parse(store.get(RECENT_KEY)) || []).filter(r => r && /^[a-z0-9]{6}$/.test(r.room) && /^\?room=[a-z0-9]{6}(&host=[a-z0-9]+|(&watch=1)?(&k=[0-9a-f]{16})?)$/.test(r.q)); } catch (_) { return []; } }
+function recentList() { try { return (JSON.parse(store.get(RECENT_KEY)) || []).filter(r => r && /^[a-z0-9]{6}$/.test(r.room) && /^\?room=[a-z0-9]{6}(&host=[a-z0-9]+|(&watch=1)?(&k=[0-9a-f]{16})?(&f=[0-9a-f]{16})?)$/.test(r.q)); } catch (_) { return []; } }
 function rememberGame() {
   if (!room || mode === 'local') return;
-  const q = '?room=' + room + (mode === 'host' ? '&host=' + new URLSearchParams(location.search).get('host') : (mode === 'watch' ? '&watch=1' : '') + (roomKey ? '&k=' + roomKey : ''));
+  const q = '?room=' + room + (mode === 'host' ? '&host=' + new URLSearchParams(location.search).get('host') : (mode === 'watch' ? '&watch=1' : '') + (roomKey ? '&k=' + roomKey : '') + (hostFp ? '&f=' + hostFp : ''));
   const list = [{ room, q, role: mode, ts: Date.now() }, ...recentList().filter(r => r.room !== room)].slice(0, 5);
   store.set(RECENT_KEY, JSON.stringify(list));
 }
@@ -2472,8 +2637,8 @@ function boot() {
   updateActbar();
   setMode(mode === 'local' ? (wideMQ.matches ? 'sticker' : 'emoji') : 'chat');
   updateAudInfo();
-  if (mode === 'watch') { startWatch(); return; }
-  if (mode !== 'local') { startNet(); if (!hadProfile && !profileShown) { profileShown = true; setTimeout(openProfile, 600); } }
+  if (mode === 'watch') { loadKeys().then(startWatch); return; }
+  if (mode !== 'local') { loadKeys().then(() => { if (mode === 'host') updateShareLink(); startNet(); }); if (!hadProfile && !profileShown) { profileShown = true; setTimeout(openProfile, 600); } }
   if (mode === 'guest') $('status').textContent = t('connecting');
   else { prev = null; render(false); if (state.moveNo === 0 && !reduced) deal(); }
 }
@@ -2482,6 +2647,15 @@ if (!reduced) dealIn($('heroPieces').querySelectorAll('.piece'), 90);
 soundIcon();
 applyLang();
 boot();
+</script>
+<script>
+// Cloudflare Web Analytics: cookie-free visit counts, loaded only on the published site
+if (location.hostname === 'moyu-games.github.io' && !navigator.webdriver) {
+  const s = document.createElement('script');
+  s.type = 'module'; s.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+  s.dataset.cfBeacon = '{"token": "d17ef5d3ac004483bc81c3f695e24fb0"}';
+  document.head.appendChild(s);
+}
 </script>
 </body>
 </html>

@@ -71,7 +71,7 @@ Without a server, someone has to deal the board. To stop the host from picking a
 1. The host draws a 128-bit secret `hs` from `crypto.getRandomValues` and publishes only its hash `c = SHA-256(hs)`.
 2. After receiving `c`, the guest draws its own seed `gs` and sends it to the host.
 3. The layout is a Fisher–Yates shuffle driven by a PRNG (sfc32) seeded with `SHA-256(hs | gs)`. The host committed to `hs` before seeing `gs`, and the guest never sees `hs` during play, so neither side can steer where the pieces go.
-4. When the game ends, the host reveals `hs`. The guest checks that `SHA-256(hs)` matches `c`, that its own `gs` was used, and that every flip it saw matches the layout it can now rebuild. The result appears on the end screen; any mismatch shows a warning.
+4. When the game ends, the host reveals `hs`. The guest checks that `SHA-256(hs)` matches the `c` it saved when it sent its seed, that its own `gs` was used, and that every flip it saw matches the layout it can now rebuild. The result appears on the end screen; any mismatch shows a warning, and the note also says how many untouched games the host restarted before this one.
 
 This makes a rigged layout detectable. It cannot stop a host from peeking at face-down pieces in its own browser; that would need a trusted server or a mental-poker protocol. If the guest joins after the first move, that game is dealt by the host alone and the end screen says so.
 
@@ -99,22 +99,33 @@ Over the relay the guest no longer waits for that round trip: a move is drawn th
 | Topic | Payload |
 |---|---|
 | `banqi-tw/v1/<room>/{host,guest}` | Moves and game state between the two players |
-| `banqi-tw/v1/<room>/watch-<roomKey>` | Board and events for spectators |
-| `banqi-tw/v1/<room>/pub-<roomKey>` | Public chat |
-| `banqi-tw/v1/<room>/aud-<roomKey>` | Spectator heartbeats for the live audience count |
+| `banqi-tw/v1/<room>/watch[-<topicId>]` | Board and events for spectators |
+| `banqi-tw/v1/<room>/pub[-<topicId>]` | Public chat |
+| `banqi-tw/v1/<room>/aud[-<topicId>]` | Spectator heartbeats for the live audience count |
 | `banqi-tw/v1/lobby/<room>` | Lobby listing (retained message) |
 
 - Lobby entries are retained messages, and the host registers an MQTT Last Will. If the host disconnects, the broker clears the listing automatically, so no ghost rooms are left behind.
-- The room key is the first 16 hex digits of `SHA-256(room | password)`. It is only ever sent over the direct channel, never over the public relay.
+- On a locked room, the room key is the first 16 hex digits of `SHA-256(room | password)`. It never appears on the relay: topic names carry `topicId = SHA-256("topic|" + key)`, and the spectator, public-chat and audience channels are encrypted with AES-GCM under a key derived from it.
 
 ### Security and privacy
 
-- **First guest holds the seat.** Moves from anyone else using the same room code are rejected. The seat opens to a new guest only after the current one has been silent for 60 seconds.
-- **Spectator events are allow-listed.** Stickers, reactions, and taunts forwarded to spectators are checked against the built-in sets. External links must be Tenor or Giphy URLs, and all text is HTML-escaped before display.
+Anyone who knows a room code can publish to its relay topics, so the design assumes every relay message may be forged.
+
+- **Every message is signed.** Each browser has its own ECDSA P-256 key per room (WebCrypto). Game, spectator, public-chat and lobby messages are signed, and receivers check the signature before anything else.
+- **The host is pinned by its key.** The invite and spectator links carry the host key's fingerprint (`&f=`), and the guest and spectators accept host messages only from that key. A lobby join takes the fingerprint from the signed lobby card. If the host's key ever changes (for example, it cleared its browser data), the guest is told to ask for a new link instead of silently following someone else.
+- **The guest is its key.** The seat belongs to the first guest key; messages from any other key get "room full". On a locked room, a new guest proves it knows the password with `SHA-256(key | guestFingerprint)`, which is useless to anyone who copies it.
+- **Strict input checks.** Moves must be integer squares on the board, so a crafted move can't skip a turn or pollute JavaScript prototypes. Incoming game states are validated field by field, and actions are stamped with their game and move number, so a late or replayed action can't land in a newer game.
+- **Spectator events are allow-listed.** Stickers, reactions, and taunts forwarded to spectators are checked against the built-in sets. External links must be Tenor or Giphy URLs, and all text is HTML-escaped before display. In public chat, the "host" and "guest" labels are shown only for the matching keys.
 - **No photo uploads.** To keep private photos from leaking, stickers come only from the built-in set or Tenor/Giphy links.
+- **Pinned third-party code.** PeerJS and mqtt.js are loaded at exact versions with Subresource Integrity hashes.
+- **Cookie-free analytics.** Page visits are counted with Cloudflare Web Analytics, which sets no cookies and collects no personal data.
 - **Chat is not stored.** Messages live only in the players' browsers, and the host clears its relay data on leaving.
-- **Passwords are a light lock.** They stop people wandering in from the lobby, but traffic still passes through public brokers, so a determined eavesdropper could read it. Do not share sensitive information in chat.
-- **The host's browser holds the full board.** The fair shuffle stops the host from choosing the layout, but the host could still peek at face-down pieces. This is the inherent trade-off of a serverless design: fine between friends, not suitable for games played for stakes.
+
+Known limits, stated plainly:
+
+- **Private chat and the game channel are signed but not encrypted.** Spectators never receive them, but someone listening on the public broker who knows the room code can read them. Don't share sensitive information in chat.
+- **Anyone can wipe a retained message.** A blank retained publish can hide a lobby card or spectator board until the host republishes it (every 30 seconds). It can't fake one.
+- **The host's browser holds the full board.** The fair shuffle stops the host from choosing the layout, and a swapped commitment is detected, but the host could still peek at face-down pieces. This is the inherent trade-off of a serverless design: fine between friends, not suitable for games played for stakes.
 
 ### Front end
 
