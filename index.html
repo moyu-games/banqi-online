@@ -227,7 +227,9 @@
   .dancer { position: absolute; bottom: calc(10px + env(safe-area-inset-bottom)); }
   .dancer img { width: 100%; height: 100%; object-fit: contain; display: block; transform-origin: 50% 100%; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .45)); }
   .tray-tabs { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
-  .tray-tabs button { padding: 4px 12px; font-size: 13px; }
+  .tray-tabs button { padding: 4px 11px; font-size: 13px; }
+  .link-form { display: flex; gap: 6px; margin-bottom: 6px; }
+  .link-form input { flex: 1; min-width: 0; font: inherit; font-size: 14px; color: var(--ink); background: rgba(0, 0, 0, .3); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; }
   .tray-tabs button.on { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); }
   button:disabled { opacity: .4; cursor: default; }
   .credit { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; }
@@ -299,9 +301,11 @@
     <div class="panel" id="chatCard">
       <div class="reacts" id="reacts"></div>
       <div class="tray hidden" id="tray">
-        <div class="tray-tabs" id="trayTabs"><button type="button" data-g="meme" class="on">梗圖</button><button type="button" data-g="cat">跳舞貓</button><button type="button" data-g="qibao">棋寶</button><button type="button" data-g="mine">我的</button></div>
+        <div class="tray-tabs" id="trayTabs"><button type="button" data-g="meme" class="on">梗圖</button><button type="button" data-g="nailong">奶龍</button><button type="button" data-g="cat">跳舞貓</button><button type="button" data-g="cry">哭哭貓</button><button type="button" data-g="shock">震驚貓</button><button type="button" data-g="clap">拍手</button><button type="button" data-g="speechless">無言</button><button type="button" data-g="qibao">棋寶</button><button type="button" data-g="mine">我的</button></div>
+        <form class="link-form hidden" id="linkForm"><input type="url" id="linkInput" placeholder="貼上 Tenor / Giphy 的圖片網址" autocomplete="off"><button class="primary">加入</button></form>
+        <div class="muted tray-hint hidden" id="linkHint">在 Tenor 或 Giphy 長按（電腦按右鍵）圖片 →「複製圖片網址」，貼到上面就會加進來，而且會動。</div>
         <div class="tray-grid" id="trayGrid"></div>
-        <div class="credit hidden" id="tenorCredit">跳舞貓 GIF via Tenor</div>
+        <div class="credit hidden" id="tenorCredit">GIF via Tenor</div>
         <div class="muted tray-hint">點「＋」可以從相簿加入自己的貼圖；朋友傳來的圖也會自動收藏在這裡。</div>
         <input type="file" id="stickerFile" accept="image/*" hidden>
       </div>
@@ -323,16 +327,16 @@
 <div id="party"></div>
 <div id="prof" class="hidden"><div class="card"><h3>你的名字和頭像</h3><input id="profName" maxlength="12" placeholder="名字（最多 12 個字）" autocomplete="off"><div class="av-grid" id="avGrid"></div><div class="row" style="justify-content:flex-end"><button class="primary" id="profSave">好了</button></div></div></div>
 <div id="ask" class="hidden"><div class="card"><p id="askText"></p><div class="row"><button class="primary" id="askYes"></button><button id="askNo"></button></div></div></div>
-<div class="ver">版本 11</div>
+<div class="ver">版本 12</div>
 <div id="overlay" class="hidden"><div class="card"><div class="stamp" id="ovStamp"></div><h2 id="ovTitle"></h2><p id="ovReason"></p><div class="row"><button class="primary" id="ovAgain" data-t="again"></button><button id="ovClose" data-t="close"></button></div></div></div>
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
-<script src="logic.js?v=11"></script>
-<script src="stickers.js?v=11"></script>
+<script src="logic.js?v=12"></script>
+<script src="stickers.js?v=12"></script>
 <script>
-const APP_VER = '11';
+const APP_VER = '12';
 (function checkVersion() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.text() : '')).then(v => {
     v = v.trim();
@@ -951,8 +955,11 @@ function floatEmoji(e, mine) {
 // A custom sticker received from the friend is saved too, so both sides end up with the same set.
 const STK_KEY = 'bq-stickers', STK_MAX = 24;
 const IMG_RE = /^data:image\/(png|webp|jpeg|gif);base64,[A-Za-z0-9+/=]+$/;
+// Image links we accept for animated custom stickers: Tenor and Giphy media files only.
+const LINK_RE = /^https:\/\/(media\d?\.tenor\.com|c\.tenor\.com|media\d?\.giphy\.com|i\.giphy\.com)\/[A-Za-z0-9_\-\/.%~]{5,300}$/;
+const okCustom = u => typeof u === 'string' && (IMG_RE.test(u) || LINK_RE.test(u));
 let customs = [];
-try { customs = (JSON.parse(store.get(STK_KEY)) || []).filter(u => IMG_RE.test(u)); } catch (_) {}
+try { customs = (JSON.parse(store.get(STK_KEY)) || []).filter(okCustom); } catch (_) {}
 let lastSticker = 0;
 function saveCustoms() {
   while (customs.length) { try { localStorage.setItem(STK_KEY, JSON.stringify(customs)); return; } catch (_) { customs.pop(); } }
@@ -965,9 +972,30 @@ function keepCustom(u) {
 }
 const stkArt = x => x.svg || `<img src="${x.img}" alt="${x.name}" draggable="false" loading="lazy">`;
 let trayGroup = 'meme';
+const TENOR_GROUPS = ['cat', 'nailong', 'cry', 'shock', 'clap', 'speechless'];
+// Turn what people paste into an image address we can show: media links as-is, a Giphy page into its media file.
+function toImageLink(raw) {
+  const v = String(raw || '').trim();
+  if (LINK_RE.test(v)) return { url: v };
+  const g = v.match(/^https:\/\/giphy\.com\/(?:gifs|stickers)\/(?:[\w-]*-)?([A-Za-z0-9]{8,24})\/?$/);
+  if (g) return { url: `https://media.giphy.com/media/${g[1]}/giphy.webp` };
+  if (/^https:\/\/tenor\.com\//.test(v)) return { err: '這是 Tenor 的頁面網址，請長按圖片選「複製圖片網址」再貼一次' };
+  return { err: '只支援 Tenor 或 Giphy 的圖片網址' };
+}
+$('linkForm').onsubmit = e => {
+  e.preventDefault();
+  const r = toImageLink($('linkInput').value);
+  if (r.err) { toast(r.err, 3500); return; }
+  const img = new Image();
+  img.onload = () => { keepCustom(r.url); $('linkInput').value = ''; renderTray(); toast('已加入貼圖'); };
+  img.onerror = () => toast('這個網址讀不到圖片', 3000);
+  img.src = r.url;
+};
 function renderTray() {
   document.querySelectorAll('#trayTabs button').forEach(b => b.classList.toggle('on', b.dataset.g === trayGroup));
-  $('tenorCredit').classList.toggle('hidden', trayGroup !== 'cat');
+  $('tenorCredit').classList.toggle('hidden', !TENOR_GROUPS.includes(trayGroup));
+  $('linkForm').classList.toggle('hidden', trayGroup !== 'mine');
+  $('linkHint').classList.toggle('hidden', trayGroup !== 'mine');
   $('trayGrid').innerHTML = trayGroup === 'mine'
     ? '<button type="button" class="stk add" data-add="1" title="加入自己的貼圖">＋</button>' +
       customs.map((u, k) => `<div class="stk" data-c="${k}"><img src="${u}" alt=""><span class="del" data-del="${k}">×</span></div>`).join('')
@@ -984,7 +1012,8 @@ $('trayGrid').onclick = e => {
   if (!online()) { toast(t('waiting')); return; }
   if (Date.now() - lastSticker < 1000) return;
   lastSticker = Date.now();
-  const msg = el.dataset.id ? { type: 'sticker', sid: el.dataset.id } : { type: 'sticker', img: customs[+el.dataset.c] };
+  const cu = customs[+el.dataset.c];
+  const msg = el.dataset.id ? { type: 'sticker', sid: el.dataset.id } : IMG_RE.test(cu) ? { type: 'sticker', img: cu } : { type: 'sticker', url: cu };
   send(msg);
   showSticker(msg, true);
 };
@@ -1019,6 +1048,7 @@ function showSticker(m, mine) {
   let html;
   if (m.sid) { const x = STICKERS.find(k => k.id === m.sid); if (!x) return; html = stkArt(x); }
   else if (typeof m.img === 'string' && m.img.length < 100000 && IMG_RE.test(m.img)) { html = `<img src="${m.img}" alt="">`; if (!mine) keepCustom(m.img); }
+  else if (typeof m.url === 'string' && LINK_RE.test(m.url)) { html = `<img src="${m.url}" alt="">`; if (!mine) keepCustom(m.url); }
   else return;
   sfx.boing();
   // A speech bubble right next to the sender's avatar (mine on the left card, the friend's on the right),
@@ -1051,7 +1081,7 @@ function showSticker(m, mine) {
 // ---------- profile (name + avatar) ----------
 const esc = v => String(v).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 const cleanName = v => String(v || '').replace(/\s+/g, ' ').trim().slice(0, 12);
-const AVATARS = STICKERS.filter(x => x.group === 'meme' || x.cut || x.id.startsWith('m-')).map(x => x.id);
+const AVATARS = STICKERS.filter(x => x.group === 'meme' || x.group === 'nailong' || (x.group === 'cat' && x.cut) || x.id.startsWith('m-')).map(x => x.id);
 let profile = null, oppProfile = null, profileShown = false;
 try { profile = JSON.parse(store.get('bq-profile')); } catch (_) {}
 const hadProfile = !!(profile && typeof profile.name === 'string');
