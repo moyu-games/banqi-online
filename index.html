@@ -64,7 +64,7 @@
   .player .disc.r { background: radial-gradient(circle at 35% 30%, var(--ivory-1), var(--ivory-2)); color: var(--red); box-shadow: inset 0 0 0 2px var(--red); }
   .player .disc.b { background: radial-gradient(circle at 35% 30%, var(--ivory-1), var(--ivory-2)); color: var(--black); box-shadow: inset 0 0 0 2px var(--black); }
   .player .who { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .player .caps { display: flex; flex-wrap: wrap; gap: 2px; min-height: 20px; }
+  .player .caps { display: flex; flex-wrap: nowrap; overflow: hidden; gap: 2px; height: 20px; }
   .player.right .caps { justify-content: flex-end; }
   .player.turn { border-color: var(--gold); background: var(--gold-soft); box-shadow: 0 0 0 1px var(--gold), 0 0 24px rgba(224, 173, 82, .25); }
   .player.turn .who::after { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); margin: 0 6px; vertical-align: middle; box-shadow: 0 0 8px var(--gold); }
@@ -186,10 +186,8 @@
   .stk .del { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; background: #6a2a20; color: #fff; font-size: 13px; line-height: 1; display: grid; place-items: center; border: 1px solid var(--line); }
   .stk.add { font-size: 28px; color: var(--gold); font-family: inherit; }
   .tray-hint { font-size: 12px; margin-top: 6px; }
-  .sticker-show { position: fixed; left: 50%; top: 42%; width: min(48vw, 230px); height: min(48vw, 230px); z-index: 85; pointer-events: none; filter: drop-shadow(0 10px 24px rgba(0, 0, 0, .55)); }
-  .sticker-show.mine { width: min(30vw, 140px); height: min(30vw, 140px); left: auto; top: auto; right: 16px; bottom: 90px; }
+  .sticker-show { position: fixed; z-index: 85; pointer-events: none; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, .55)); }
   .sticker-show svg, .sticker-show img { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .sticker-show .from { position: absolute; left: 50%; bottom: -24px; transform: translateX(-50%); font-size: 13px; color: var(--ink); background: rgba(0, 0, 0, .55); padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
   #toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); background: #2c2219; border: 1px solid var(--line); color: var(--ink); padding: 9px 16px; border-radius: 999px; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; z-index: 70; max-width: calc(100% - 32px); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
@@ -251,7 +249,7 @@
 
     <div class="row" style="justify-content:space-between;margin-top:12px">
       <span class="conn" id="conn"></span>
-      <button id="newBtn" data-t="newGame"></button>
+      <span class="row"><button id="inviteBtn" class="hidden">複製邀請連結</button><button id="newBtn" data-t="newGame"></button></span>
     </div>
 
     <div class="panel" id="chatCard">
@@ -275,16 +273,16 @@
     <table class="ranks" id="rankTable"></table>
   </section>
 </main>
-<div class="ver">版本 7</div>
+<div class="ver">版本 8</div>
 <div id="overlay" class="hidden"><div class="card"><div class="stamp" id="ovStamp"></div><h2 id="ovTitle"></h2><p id="ovReason"></p><div class="row"><button class="primary" id="ovAgain" data-t="again"></button><button id="ovClose" data-t="close"></button></div></div></div>
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
-<script src="logic.js?v=7"></script>
-<script src="stickers.js?v=7"></script>
+<script src="logic.js?v=8"></script>
+<script src="stickers.js?v=8"></script>
 <script>
-const APP_VER = '7';
+const APP_VER = '8';
 (function checkVersion() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.text() : '')).then(v => {
     v = v.trim();
@@ -335,7 +333,7 @@ const t = k => T[lang][k];
 const $ = id => document.getElementById(id);
 let mode = null;      // 'host' | 'guest' | 'local'
 let room = null;
-let state = null, prev = null, sel = null, peer = null, conn = null, retryTimer = null, shownOver = -1;
+let state = null, prev = null, sel = null, peer = null, conn = null, retryTimer = null, shownOver = '';
 const me = () => (mode === 'local' ? state.turn : mode);
 const portraitMQ = matchMedia('(max-width: 600px) and (orientation: portrait)');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -480,7 +478,8 @@ function render(animate = true) {
   else if (animate) playSound(prev);
   prev = state;
   document.title = (mode !== 'local' && myTurn && document.hidden) ? t('titleTurn') : '暗棋對戰';
-  if (state.winner && shownOver !== state.moveNo) { shownOver = state.moveNo; setTimeout(showOver, animate ? 700 : 0); }
+  if (state.winner && shownOver !== state.gid + ':' + state.moveNo) { shownOver = state.gid + ':' + state.moveNo; setTimeout(showOver, animate ? 700 : 0); }
+  if (!state.winner && !$('overlay').classList.contains('hidden')) $('overlay').classList.add('hidden');
 }
 let cells = {};
 const cellOf = i => cells[i];
@@ -488,8 +487,9 @@ const pieceIn = i => cells[i].querySelector(':scope > .piece:not(.ghost)');
 
 function animateFrom(p) {
   const s = state, last = s.last;
-  if (!p || !last) return;
-  if (s.moveNo === 0 && (p.moveNo > 0 || p.board.some(x => x && x.up))) return deal();
+  if (!p) return;
+  if (s.moveNo === 0 && (p.gid !== s.gid || p.moveNo > 0)) return deal();
+  if (!last) return;
   if (s.moveNo !== p.moveNo + 1) return;
   playSound(p);
   effects(p, s);
@@ -599,6 +599,7 @@ function effects(p, s) {
 }
 
 function deal() {
+  streak.host = streak.guest = 0;
   knock(1800, .04, .2);
   dealIn($('board').querySelectorAll('.piece'), 18);
 }
@@ -716,22 +717,25 @@ function setState(s, animate = true) {
   state = s;
   if (mode !== 'guest') store.set(storeKey(), JSON.stringify(state));
   render(animate);
-  if (mode === 'host') send({ type: 'state', state });
+  if (mode === 'host') sendState();
 }
 const storeKey = () => (mode === 'local' ? 'bq-local' : 'bq-room-' + room);
 
 function newGame(skipConfirm) {
+  if (mode === 'guest' && !state) return;
   if (!skipConfirm && state && state.moveNo > 0 && !state.winner && !confirm(t('confirmNew'))) return;
-  if (mode === 'guest') { send({ type: 'reset' }); return; }
+  if (mode === 'guest') { send({ type: 'reset', gid: state.gid }); return; }
   resetGame();
 }
 $('newBtn').onclick = () => newGame(false);
 function resetGame() {
   const first = state ? B.other(state.first) : 'host';
   sel = null;
+  streak.host = streak.guest = 0;
   $('overlay').classList.add('hidden');
-  setState(B.newGame(first));
+  setState(freshGame(first));
 }
+const freshGame = first => Object.assign(B.newGame(first), { gid: rid() });
 
 // ---------- emoji reactions ----------
 const EMOJI = ['👍', '😂', '😱', '🔥', '😭', '🙏', '😎', '🤯'];
@@ -828,11 +832,27 @@ function showSticker(m, mine) {
   else if (typeof m.img === 'string' && m.img.length < 100000 && IMG_RE.test(m.img)) { html = `<img src="${m.img}" alt="">`; if (!mine) keepCustom(m.img); }
   else return;
   sfx.boing();
-  const d = document.createElement('div'), base = mine ? '' : 'translate(-50%,-50%) ';
-  d.className = 'sticker-show' + (mine ? ' mine' : '');
-  d.innerHTML = html + (mine ? '' : `<span class="from">${t('friend')}</span>`);
-  d.style.transform = base;
+  // Pops out of the sender's player card (mine on the left, the friend's on the right), sitting in the
+  // space above the board so it never covers a piece. If the cards are scrolled away, it shows mid-screen.
+  const who = $(mine ? 'pMe' : 'pOpp');
+  who.querySelectorAll(':scope ~ .sticker-show').forEach(x => x.remove());
+  document.querySelectorAll('.sticker-show.' + (mine ? 'me' : 'opp')).forEach(x => x.remove());
+  const c = who.getBoundingClientRect(), boardTop = wrapEl().getBoundingClientRect().top;
+  const d = document.createElement('div');
+  let size = Math.min(130, boardTop - 6), x, y, origin;
+  if (c.bottom > 20 && size >= 70) {
+    y = boardTop - 6 - size;
+    x = mine ? c.left + 6 : c.right - 6 - size;
+    origin = mine ? '20% 100%' : '80% 100%';
+  } else {
+    size = Math.min(200, innerWidth * .5); x = (innerWidth - size) / 2; y = (innerHeight - size) / 2; origin = '50% 50%';
+  }
+  d.className = 'sticker-show ' + (mine ? 'me' : 'opp');
+  Object.assign(d.style, { left: x + 'px', top: y + 'px', width: size + 'px', height: size + 'px', transformOrigin: origin });
+  d.innerHTML = html;
   document.body.appendChild(d);
+  who.animate([{ boxShadow: '0 0 0 2px #e0ad52, 0 0 28px rgba(224,173,82,.6)' }, { boxShadow: '0 0 0 0 transparent' }], { duration: 900 });
+  const base = '';
   if (reduced) { setTimeout(() => d.remove(), 2000); return; }
   d.animate([{ transform: base + 'scale(0) rotate(-20deg)', opacity: 0, easing: 'cubic-bezier(.2,1.4,.5,1)' }, { transform: base + 'scale(1.15) rotate(6deg)', opacity: 1, offset: .12 },
     { transform: base + 'scale(.95) rotate(-3deg)', opacity: 1, offset: .25 }, { transform: base + 'scale(1) rotate(0)', opacity: 1, offset: .82, easing: 'ease-in' },
@@ -869,6 +889,14 @@ let mq = null, lastHeard = 0, heard = { p2p: 0, relay: 0 }, gotState = false, st
 const rid = () => Math.random().toString(36).slice(2, 12);
 const online = () => Date.now() - lastHeard < 12000;
 
+// What the guest is allowed to see: face-down pieces carry no type or color.
+const forGuest = st => Object.assign({}, st, { board: st.board.map(x => (x && !x.up ? { up: false } : x)) });
+const sendState = () => send({ type: 'state', state: forGuest(state) });
+const validState = st => !!st && Array.isArray(st.board) && st.board.length === 32 && typeof st.seq === 'number' &&
+  typeof st.gid === 'string' && (st.turn === 'host' || st.turn === 'guest') && !!st.captured && Array.isArray(st.captured.r) && Array.isArray(st.captured.b);
+const deadGids = new Set();
+// The guest tells the host which game/move it has; the host answers with the full state if the guest is behind.
+const syncReq = type => send({ type, gid: state ? state.gid : null, seq: state ? state.seq : -1 });
 function send(msg) {
   msg.id = rid();
   if (conn && conn.open) { try { conn.send(msg); } catch (_) {} }
@@ -878,8 +906,11 @@ function setConn(text, kind) {
   if (setConn.v === text + kind) return;
   setConn.v = text + kind;
   $('conn').innerHTML = `<span class="dot ${kind || ''}"></span>${text}`;
-  $('shareRow').classList.toggle('hidden', mode !== 'host' || kind === 'on');
+  if (kind === 'on') everJoined = true;
+  $('shareRow').classList.toggle('hidden', mode !== 'host' || everJoined);
+  $('inviteBtn').classList.toggle('hidden', mode !== 'host' || !everJoined);
 }
+let everJoined = false;
 function updateConn() {
   if (mode === 'local' || !mode) return;
   const now = Date.now(), via = now - heard.p2p < 12000 ? '（直連）' : now - heard.relay < 12000 ? '（中繼）' : '';
@@ -897,18 +928,20 @@ function receive(m, ch) {
   lastHeard = Date.now();
   if (!wasOnline) updateConn();
   if (mode === 'host') {
-    if (m.type === 'hello') send({ type: 'state', state });
+    if (m.type === 'hello' || m.type === 'ping') { if (m.type === 'hello' || m.gid !== state.gid || !(m.seq >= state.seq)) sendState(); }
     else if (m.type === 'action') {
       const r = B.apply(state, 'guest', m.action);
-      if (r.ok) setState(r.state); else send({ type: 'state', state });
-    } else if (m.type === 'reset') resetGame();
+      if (r.ok) setState(r.state); else sendState();
+    } else if (m.type === 'reset') { if (m.gid === state.gid) resetGame(); }
     else if (m.type === 'chat') addChat('friend', String(m.text).slice(0, 200));
     else if (m.type === 'react') floatEmoji(m.e, false);
     else if (m.type === 'sticker') showSticker(m, false);
   } else {
     if (m.type === 'state') {
       const s = m.state;
-      if (state && (s.seq || 0) <= (state.seq || 0)) return; // older or same state arriving on the slower channel
+      if (!validState(s) || deadGids.has(s.gid)) return;
+      if (state && s.gid === state.gid && s.seq <= state.seq) return; // older or same state arriving on the slower channel
+      if (state && s.gid !== state.gid) deadGids.add(state.gid);    // a new game (or the host started over): never go back to the old one
       const first = !state;
       state = s; gotState = true;
       if (sel != null && !(state.board[sel] && state.board[sel].up && state.turn === 'guest')) sel = null;
@@ -930,7 +963,7 @@ function startRelay(k = 0) {
   c.on('connect', () => {
     ok = true; mq = c;
     c.subscribe(topic(mode), { qos: 1 });
-    if (mode === 'guest') send({ type: 'hello' });
+    if (mode === 'guest') syncReq('hello');
   });
   c.on('message', (_, payload) => { try { receive(JSON.parse(payload.toString()), 'relay'); } catch (_) {} });
   const retry = () => { if (mq === c) mq = null; c.end(true); setTimeout(() => startRelay(ok ? k : k + 1), ok ? 1500 : 500); };
@@ -944,7 +977,7 @@ function startP2P() {
   if (mode === 'host') {
     peer = new Peer(hostId(), PEER_OPTS);
     peer.on('connection', c => {
-      c.on('open', () => { conn = c; send({ type: 'state', state }); });
+      c.on('open', () => { conn = c; sendState(); });
       c.on('data', m => receive(m, 'p2p'));
       c.on('close', () => { if (conn === c) conn = null; });
     });
@@ -958,7 +991,7 @@ function startP2P() {
 }
 function connectToHost() {
   const c = peer.connect(hostId(), { reliable: true });
-  c.on('open', () => { conn = c; send({ type: 'hello' }); });
+  c.on('open', () => { conn = c; syncReq('hello'); });
   c.on('data', m => receive(m, 'p2p'));
   c.on('close', () => { if (conn === c) conn = null; scheduleRetry(); });
 }
@@ -970,12 +1003,16 @@ function startNet() {
   startRelay();
   updateConn();
   timers.push(setInterval(() => {
-    send({ type: 'ping' });
-    if (mode === 'guest' && !gotState) send({ type: 'hello' });
+    if (mode === 'guest') syncReq(gotState ? 'ping' : 'hello'); else send({ type: 'ping' });
   }, 4000));
   timers.push(setInterval(updateConn, 2000));
 }
-document.addEventListener('visibilitychange', () => { if (!document.hidden && state) document.title = '暗棋對戰'; });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  if (state) document.title = '暗棋對戰';
+  if (mode === 'guest') syncReq('hello');
+});
+addEventListener('pageshow', () => { if (mode === 'guest') syncReq('hello'); });
 
 // ---------- startup ----------
 function enterGame() {
@@ -987,7 +1024,9 @@ function enterGame() {
 }
 function loadOrNew() {
   try { state = JSON.parse(store.get(storeKey())); } catch (_) { state = null; }
-  if (!state || !state.board) state = B.newGame('host');
+  if (!state || !state.board) state = freshGame('host');
+  if (!state.gid) state.gid = rid();
+  if (typeof state.seq !== 'number') state.seq = 0;
   store.set(storeKey(), JSON.stringify(state));
 }
 
@@ -1004,6 +1043,7 @@ $('copyBtn').onclick = () => {
   $('shareLink').select();
   (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(() => toast(t('copied')), () => { document.execCommand('copy'); toast(t('copied')); });
 };
+$('inviteBtn').onclick = () => navigator.clipboard.writeText($('shareLink').value).then(() => toast(t('copied')), () => toast($('shareLink').value, 5000));
 $('rulesBtn').onclick = () => { const r = $('rules'); r.classList.toggle('hidden'); if (!r.classList.contains('hidden')) r.scrollIntoView({ behavior: 'smooth' }); };
 
 function boot() {
