@@ -176,6 +176,20 @@
     font-family: var(--kai); font-size: 72px; line-height: 1; color: #d8402e; transform: rotate(-12deg); background: rgba(216, 64, 46, .08); text-shadow: 0 0 16px rgba(216, 64, 46, .5); }
   .stamp.lose { color: #8f8578; background: rgba(143, 133, 120, .08); text-shadow: none; }
   .stamp.draw { color: var(--gold); background: var(--gold-soft); }
+  /* stickers */
+  .reacts .tray-btn { font-size: 14px; font-weight: 700; color: var(--gold); border-color: rgba(224, 173, 82, .5); }
+  .tray { margin-bottom: 10px; }
+  .tray-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; max-height: 236px; overflow-y: auto; padding: 6px 4px 2px; }
+  .stk { position: relative; aspect-ratio: 1; border-radius: 12px; background: rgba(255, 244, 225, .06); border: 1px solid var(--line); padding: 4px; display: grid; place-items: center; cursor: pointer; }
+  .stk:active { transform: scale(.94); }
+  .stk svg, .stk img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .stk .del { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; background: #6a2a20; color: #fff; font-size: 13px; line-height: 1; display: grid; place-items: center; border: 1px solid var(--line); }
+  .stk.add { font-size: 28px; color: var(--gold); font-family: inherit; }
+  .tray-hint { font-size: 12px; margin-top: 6px; }
+  .sticker-show { position: fixed; left: 50%; top: 42%; width: min(48vw, 230px); height: min(48vw, 230px); z-index: 85; pointer-events: none; filter: drop-shadow(0 10px 24px rgba(0, 0, 0, .55)); }
+  .sticker-show.mine { width: min(30vw, 140px); height: min(30vw, 140px); left: auto; top: auto; right: 16px; bottom: 90px; }
+  .sticker-show svg, .sticker-show img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .sticker-show .from { position: absolute; left: 50%; bottom: -24px; transform: translateX(-50%); font-size: 13px; color: var(--ink); background: rgba(0, 0, 0, .55); padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
   #toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); background: #2c2219; border: 1px solid var(--line); color: var(--ink); padding: 9px 16px; border-radius: 999px; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; z-index: 70; max-width: calc(100% - 32px); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
@@ -242,6 +256,11 @@
 
     <div class="panel" id="chatCard">
       <div class="reacts" id="reacts"></div>
+      <div class="tray hidden" id="tray">
+        <div class="tray-grid" id="trayGrid"></div>
+        <div class="muted tray-hint">點「＋」可以從相簿加入自己的貼圖；朋友傳來的圖也會自動收藏在這裡。</div>
+        <input type="file" id="stickerFile" accept="image/*" hidden>
+      </div>
       <div id="chatLog"></div>
       <form id="chatForm">
         <input type="text" id="chatInput" maxlength="200" autocomplete="off">
@@ -256,15 +275,16 @@
     <table class="ranks" id="rankTable"></table>
   </section>
 </main>
-<div class="ver">版本 5</div>
+<div class="ver">版本 7</div>
 <div id="overlay" class="hidden"><div class="card"><div class="stamp" id="ovStamp"></div><h2 id="ovTitle"></h2><p id="ovReason"></p><div class="row"><button class="primary" id="ovAgain" data-t="again"></button><button id="ovClose" data-t="close"></button></div></div></div>
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
-<script src="logic.js?v=5"></script>
+<script src="logic.js?v=7"></script>
+<script src="stickers.js?v=7"></script>
 <script>
-const APP_VER = '5';
+const APP_VER = '7';
 (function checkVersion() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.text() : '')).then(v => {
     v = v.trim();
@@ -363,6 +383,7 @@ const sfx = {
   boom(d = 0) { noise(.5, { freq: 300, vol: .9, delay: d }); tone(110, .45, { vol: .5, delay: d, to: 40 }); },
   gong(d = 0) { [196, 263, 392, 587, 789].forEach((f, k) => tone(f * (1 + k * .003), 2.2 - k * .3, { vol: .22 / (k + 1), delay: d, attack: .01 })); noise(.15, { freq: 2500, type: 'bandpass', q: 2, vol: .3, delay: d }); },
   combo(n, d = 0) { for (let k = 0; k < Math.min(n + 1, 6); k++) tone(PENTA[k + 1], .16, { type: 'triangle', vol: .2, delay: d + k * .07 }); },
+  boing() { tone(260, .28, { type: 'triangle', vol: .28, to: 760 }); tone(760, .22, { type: 'triangle', vol: .16, delay: .2, to: 520 }); },
   bloop() { tone(420, .14, { vol: .25, to: 900 }); tone(900, .1, { vol: .12, delay: .1, to: 1300 }); },
   stamp() { thump(); noise(.12, { freq: 900, vol: .5 }); },
   fanfare() { [0, 2, 4, 5, 7].forEach((k, i) => tone(PENTA[k] || 1568, i === 4 ? .6 : .18, { type: 'triangle', vol: .22, delay: i * .12 })); tone(1568, .7, { type: 'triangle', vol: .18, delay: .6 }); },
@@ -714,10 +735,10 @@ function resetGame() {
 
 // ---------- emoji reactions ----------
 const EMOJI = ['👍', '😂', '😱', '🔥', '😭', '🙏', '😎', '🤯'];
-$('reacts').innerHTML = EMOJI.map(e => `<button type="button" data-e="${e}">${e}</button>`).join('');
+$('reacts').innerHTML = EMOJI.map(e => `<button type="button" data-e="${e}">${e}</button>`).join('') + '<button type="button" class="tray-btn" id="trayBtn">貼圖</button>';
 let lastReact = 0;
 $('reacts').onclick = e => {
-  const b = e.target.closest('button'); if (!b || Date.now() - lastReact < 350) return;
+  const b = e.target.closest('button'); if (!b || !b.dataset.e || Date.now() - lastReact < 350) return;
   lastReact = Date.now();
   send({ type: 'react', e: b.dataset.e });
   floatEmoji(b.dataset.e, true);
@@ -735,6 +756,87 @@ function floatEmoji(e, mine) {
     d.animate([{ transform: 'translate(0,0) scale(.5)', opacity: 0 }, { transform: `translate(${sway / 2}px,-15vh) scale(1.3)`, opacity: 1, offset: .2 },
       { transform: `translate(${sway}px,-55vh) scale(1)`, opacity: 0 }], { duration: 1800 + k * 250, delay: k * 140, easing: 'ease-out', fill: 'backwards' }).onfinish = () => d.remove();
   }
+}
+
+// ---------- stickers ----------
+// Built-ins come from stickers.js; custom ones are small images kept in this browser.
+// A custom sticker received from the friend is saved too, so both sides end up with the same set.
+const STK_KEY = 'bq-stickers', STK_MAX = 24;
+const IMG_RE = /^data:image\/(png|webp|jpeg|gif);base64,[A-Za-z0-9+/=]+$/;
+let customs = [];
+try { customs = (JSON.parse(store.get(STK_KEY)) || []).filter(u => IMG_RE.test(u)); } catch (_) {}
+let lastSticker = 0;
+function saveCustoms() {
+  while (customs.length) { try { localStorage.setItem(STK_KEY, JSON.stringify(customs)); return; } catch (_) { customs.pop(); } }
+  store.del(STK_KEY);
+}
+function keepCustom(u) {
+  customs = [u, ...customs.filter(x => x !== u)].slice(0, STK_MAX);
+  saveCustoms();
+  if (!$('tray').classList.contains('hidden')) renderTray();
+}
+const stkArt = x => x.svg || `<img src="${x.img}" alt="${x.name}" draggable="false">`;
+function renderTray() {
+  $('trayGrid').innerHTML = '<button type="button" class="stk add" data-add="1" title="加入自己的貼圖">＋</button>' +
+    customs.map((u, k) => `<div class="stk" data-c="${k}"><img src="${u}" alt=""><span class="del" data-del="${k}">×</span></div>`).join('') +
+    STICKERS.map(x => `<div class="stk" data-id="${x.id}" title="${x.name}">${stkArt(x)}</div>`).join('');
+}
+$('trayBtn').onclick = () => { const tr = $('tray'); tr.classList.toggle('hidden'); if (!tr.classList.contains('hidden')) { renderTray(); tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } };
+$('trayGrid').onclick = e => {
+  if (e.target.closest('[data-add]')) { $('stickerFile').click(); return; }
+  const del = e.target.closest('[data-del]');
+  if (del) { customs.splice(+del.dataset.del, 1); saveCustoms(); renderTray(); return; }
+  const el = e.target.closest('.stk');
+  if (!el) return;
+  if (!online()) { toast(t('waiting')); return; }
+  if (Date.now() - lastSticker < 1000) return;
+  lastSticker = Date.now();
+  const msg = el.dataset.id ? { type: 'sticker', sid: el.dataset.id } : { type: 'sticker', img: customs[+el.dataset.c] };
+  send(msg);
+  showSticker(msg, true);
+};
+$('stickerFile').onchange = e => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (f) shrinkImage(f).then(u => { keepCustom(u); renderTray(); toast('已加入貼圖'); }, () => toast('這張圖讀不到，換一張試試'));
+};
+// Shrink to at most ~220px and ~60 KB so it travels fast on both channels.
+function shrinkImage(file) {
+  return new Promise((res, rej) => {
+    const img = new Image(), src = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(src);
+      let size = 220, url = '';
+      for (;;) {
+        const r = Math.min(1, size / Math.max(img.width, img.height)), c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.width * r)); c.height = Math.max(1, Math.round(img.height * r));
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        url = c.toDataURL('image/webp', .82);
+        if (!url.startsWith('data:image/webp')) url = c.toDataURL('image/png');
+        if (url.length < 60000 || size <= 100) break;
+        size -= 40;
+      }
+      IMG_RE.test(url) ? res(url) : rej();
+    };
+    img.onerror = () => { URL.revokeObjectURL(src); rej(); };
+    img.src = src;
+  });
+}
+function showSticker(m, mine) {
+  let html;
+  if (m.sid) { const x = STICKERS.find(k => k.id === m.sid); if (!x) return; html = stkArt(x); }
+  else if (typeof m.img === 'string' && m.img.length < 100000 && IMG_RE.test(m.img)) { html = `<img src="${m.img}" alt="">`; if (!mine) keepCustom(m.img); }
+  else return;
+  sfx.boing();
+  const d = document.createElement('div'), base = mine ? '' : 'translate(-50%,-50%) ';
+  d.className = 'sticker-show' + (mine ? ' mine' : '');
+  d.innerHTML = html + (mine ? '' : `<span class="from">${t('friend')}</span>`);
+  d.style.transform = base;
+  document.body.appendChild(d);
+  if (reduced) { setTimeout(() => d.remove(), 2000); return; }
+  d.animate([{ transform: base + 'scale(0) rotate(-20deg)', opacity: 0, easing: 'cubic-bezier(.2,1.4,.5,1)' }, { transform: base + 'scale(1.15) rotate(6deg)', opacity: 1, offset: .12 },
+    { transform: base + 'scale(.95) rotate(-3deg)', opacity: 1, offset: .25 }, { transform: base + 'scale(1) rotate(0)', opacity: 1, offset: .82, easing: 'ease-in' },
+    { transform: base + 'translateY(-40px) scale(.9)', opacity: 0 }], { duration: 2600 }).onfinish = () => d.remove();
 }
 
 // ---------- chat ----------
@@ -802,6 +904,7 @@ function receive(m, ch) {
     } else if (m.type === 'reset') resetGame();
     else if (m.type === 'chat') addChat('friend', String(m.text).slice(0, 200));
     else if (m.type === 'react') floatEmoji(m.e, false);
+    else if (m.type === 'sticker') showSticker(m, false);
   } else {
     if (m.type === 'state') {
       const s = m.state;
@@ -814,6 +917,7 @@ function receive(m, ch) {
       render(!first);
     } else if (m.type === 'chat') addChat('friend', String(m.text).slice(0, 200));
     else if (m.type === 'react') floatEmoji(m.e, false);
+    else if (m.type === 'sticker') showSticker(m, false);
   }
 }
 
@@ -861,6 +965,7 @@ function connectToHost() {
 function scheduleRetry() { clearTimeout(retryTimer); retryTimer = setTimeout(() => { if (peer && !peer.destroyed && peer.open && !(conn && conn.open)) connectToHost(); }, 5000); }
 
 function startNet() {
+  setTimeout(() => STICKERS.forEach(x => { if (x.img) new Image().src = x.img; }), 2500);
   startP2P();
   startRelay();
   updateConn();
