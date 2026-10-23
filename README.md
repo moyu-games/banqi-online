@@ -1,146 +1,160 @@
-# 暗棋對戰 Banqi Online
+# Banqi Online 暗棋
 
-在瀏覽器裡跟朋友線上下台灣暗棋。不用註冊，也不用裝 App，開一局、把連結傳給朋友就能開始。
+**English** · [繁體中文](README.zh-TW.md)
 
-**立即遊玩：<https://kuanlinbilly.github.io/banqi-online/>**
+Real-time multiplayer Banqi (Taiwanese dark chess) that runs entirely in the browser. No accounts, no installs, and no backend of its own: create a room, share the link, and play.
 
-整個網站都是靜態檔案，放在 GitHub Pages 上，沒有自己的後端伺服器。兩台裝置優先直接連線，連不上時改走公共 MQTT 中繼。
+**Play now: <https://kuanlinbilly.github.io/banqi-online/>**
 
----
-
-## 功能
-
-**對戰**
-- 台灣暗棋規則：翻棋、吃子，炮隔一子打。
-- 悔棋需要對手同意；可以認輸，也有和棋判定。
-- 有同裝置雙人模式，兩個人輪流用同一台下。
-- 重新整理或斷線後會自動接回原本的棋局。
-
-**互動**
-- 每種棋子有自己的吃子特效，連吃有連擊效果。
-- 棋盤音效用 Web Audio 即時合成，不必載入音檔。
-- 內建 200 多張會動的梗圖貼圖，也可以貼 Tenor 或 Giphy 的連結加入新貼圖。
-- 嘲諷功能：語音快捷鍵、催棋、音效板、炫耀戰利品，大吃一子後還會自動補一句。
-- 勝利時有慶祝畫面。
-
-**大廳與觀戰**
-- 大廳會列出公開的房間，可以直接加入或觀戰。
-- 觀戰權限分三級：只看棋盤、可以傳貼圖和嘲諷、可以參與公開聊天。
-- 聊天分成公開頻道和對手之間的私人頻道。
-- 房間可以設密碼。
-
-**介面**
-- 支援亮色和深色主題。
-- 依裝置調整版面：手機直拿時操作按鈕在底部，橫拿時移到右側；電腦版不用上下捲動。
+The whole site is static files on GitHub Pages. Players connect peer-to-peer over WebRTC and fall back to a public MQTT relay when a direct connection is not possible.
 
 ---
 
-## 技術架構
+## Features
+
+**Gameplay**
+- Taiwanese Banqi rules, including the cannon's jump capture.
+- Take-backs that require the opponent's consent, resignation, and a draw rule.
+- Same-device mode for two players sharing one screen.
+- Automatic reconnection: refreshing or dropping off rejoins the same game.
+
+**Social**
+- A distinct capture animation for each piece type, plus combo effects for consecutive captures.
+- Board sound effects synthesized on the fly with the Web Audio API, so no audio files need to load.
+- 200+ built-in animated meme stickers; players can add more by pasting a Tenor or Giphy link.
+- Taunts: voice-line shortcuts, a "hurry up" nudge, a meme soundboard, trophy bragging, and an automatic quip after a big capture.
+- A victory celebration screen.
+
+**Lobby and spectating**
+- A public lobby that lists open rooms to join or watch.
+- Three spectator access levels: board only, board plus stickers and taunts, or full public chat.
+- Separate public and private (player-to-player) chat channels.
+- Optional room passwords.
+
+**Interface**
+- Light and dark themes.
+- Responsive layouts: a bottom action bar on phones in portrait, a side rail in landscape, and a two-column desktop layout that never scrolls.
+
+---
+
+## Architecture
 
 ```mermaid
 flowchart LR
-  subgraph Host["開局方（房主瀏覽器）"]
-    HS["權威棋局狀態<br/>logic.js"]
+  subgraph Host["Host browser"]
+    HS["Authoritative game state<br/>logic.js"]
   end
-  subgraph Guest["朋友瀏覽器"]
-    GV["顯示用狀態<br/>（蓋著的棋已抹除）"]
+  subgraph Guest["Guest browser"]
+    GV["View state<br/>(face-down pieces redacted)"]
   end
-  subgraph Watchers["觀眾瀏覽器"]
-    WV["唯讀棋局"]
+  subgraph Watchers["Spectator browsers"]
+    WV["Read-only board"]
   end
-  Host <-- "① WebRTC 直連（PeerJS）" --> Guest
-  Host <-- "② MQTT over WSS 中繼" --> Broker[("公共 MQTT Broker<br/>EMQX → HiveMQ → Mosquitto")]
+  Host <-- "① WebRTC data channel (PeerJS)" --> Guest
+  Host <-- "② MQTT over WSS" --> Broker[("Public MQTT brokers<br/>EMQX → HiveMQ → Mosquitto")]
   Broker <--> Guest
-  Broker -- "觀戰 / 公開聊天 / 大廳" --> Watchers
+  Broker -- "spectating / public chat / lobby" --> Watchers
 ```
 
-### 權威主機模型
+### Authoritative host
 
-- 開局的一方保存唯一的真實棋局，也負責驗證規則。
-- 開局時用 Fisher–Yates 洗牌決定 32 顆棋子的位置，之後翻棋只是把已經排好的棋子翻開。
-- 朋友那邊只送出操作，例如「翻第 12 格」或「從 3 走到 4」，由開局方判斷合不合法，再廣播新的棋局。
-- 傳給朋友和觀眾的棋局會先抹掉蓋著的棋子內容，他們打開開發者工具也看不到底牌。
-- 每個狀態都帶有遞增的序號 `seq` 和局號 `gid`。舊的或重複的訊息會被丟掉，換新局後也不會被舊局的訊息拉回去。
+- The player who creates the room holds the only true copy of the game and validates every move against the rules.
+- At the start of a game the 32 pieces are placed with a Fisher–Yates shuffle. Flipping a piece only reveals what was already placed there.
+- The guest sends intents only, such as "flip square 12" or "move 3 → 4". The host applies them if they are legal and broadcasts the new state.
+- Before the state leaves the host, face-down pieces are stripped from it, so the guest and spectators cannot read hidden pieces even with developer tools.
+- Every state carries a monotonically increasing sequence number (`seq`) and a game id (`gid`). Stale or duplicate states are dropped, and a message from a finished game can never pull a player back into it.
 
-### 雙通道傳輸
+### Dual transport
 
-| 通道 | 技術 | 用途 |
+| Channel | Technology | Role |
 |---|---|---|
-| 直連 | WebRTC DataChannel（PeerJS，STUN 用 Google 和 Cloudflare） | 延遲最低，兩邊網路允許時優先使用 |
-| 中繼 | MQTT 5 over WebSocket（mqtt.js） | 直連被 NAT 或防火牆擋住時的備援，三個公共 broker 依序切換 |
+| Direct | WebRTC data channel via PeerJS (STUN from Google and Cloudflare) | Lowest latency; used whenever both networks allow it |
+| Relay | MQTT 5 over WebSocket (mqtt.js) | Fallback when NAT or a firewall blocks the direct path; fails over across three public brokers |
 
-- 同一則訊息兩條通道都會送，收到時依訊息 id 去重，所以其中一條斷掉也不會漏訊息。
-- 雙方定期送心跳 ping，裡面帶目前的 `seq`。發現朋友的棋局落後，開局方會主動補送最新狀態。
+- Each message goes out on both channels and is de-duplicated by message id on arrival, so losing either channel drops nothing.
+- Both sides exchange heartbeat pings that carry the current `seq`. When the host sees that the guest has fallen behind, it resends the latest state.
 
-### MQTT 主題設計
+**Measured move latency** (guest tap until the guest sees the result; median of 8 moves on the live site):
 
-| 主題 | 內容 |
+| Path | Median |
 |---|---|
-| `banqi-tw/v1/<房號>/{host,guest}` | 對戰雙方的操作與棋局 |
-| `banqi-tw/v1/<房號>/watch-<房間金鑰>` | 給觀眾的棋局與事件 |
-| `banqi-tw/v1/<房號>/pub-<房間金鑰>` | 公開聊天 |
-| `banqi-tw/v1/<房號>/aud-<房間金鑰>` | 觀眾心跳，用來計算線上人數 |
-| `banqi-tw/v1/lobby/<房號>` | 大廳房間資訊（retained 訊息） |
+| Direct (WebRTC) | 15 ms |
+| Relay only (MQTT) | 625 ms |
 
-- 大廳資訊用 retained 訊息保存，房主另外設定 MQTT Last Will。房主斷線時 broker 會自動清掉這筆房間，大廳不會留下殭屍房。
-- 房間金鑰是 `SHA-256(房號 | 密碼)` 的前 16 碼。金鑰只透過直連傳送，不會出現在公共中繼上。
+### MQTT topic layout
 
-### 安全與隱私
+| Topic | Payload |
+|---|---|
+| `banqi-tw/v1/<room>/{host,guest}` | Moves and game state between the two players |
+| `banqi-tw/v1/<room>/watch-<roomKey>` | Board and events for spectators |
+| `banqi-tw/v1/<room>/pub-<roomKey>` | Public chat |
+| `banqi-tw/v1/<room>/aud-<roomKey>` | Spectator heartbeats for the live audience count |
+| `banqi-tw/v1/lobby/<room>` | Lobby listing (retained message) |
 
-- **只認第一位朋友**：第一位加入的朋友會佔住座位，別人冒用房號送來的操作一律被拒絕。佔位的人沉默 60 秒後，才開放別人接手。
-- **觀眾只能看到白名單內的事件**：轉給觀眾的貼圖、表情和嘲諷都要先比對內建清單。外部連結只接受 Tenor 和 Giphy 的網址，顯示前也會先跳脫 HTML。
-- **不能上傳照片**：為了避免私人照片外流，貼圖只能用內建的或 Tenor、Giphy 的連結。
-- **聊天不保存**：聊天紀錄只存在雙方的瀏覽器裡，房主離開時會清掉中繼上的資料。
-- **密碼只是簡易鎖**：它擋得住從大廳誤闖的人，但訊息仍然經過公共 broker，懂技術的人刻意監聽還是可能看到內容。不要在聊天裡傳敏感資訊。
-- **開局方的瀏覽器握有完整棋局**：這是沒有伺服器的架構必然的取捨，適合朋友之間玩，不適合有獎金的比賽。
+- Lobby entries are retained messages, and the host registers an MQTT Last Will. If the host disconnects, the broker clears the listing automatically, so no ghost rooms are left behind.
+- The room key is the first 16 hex digits of `SHA-256(room | password)`. It is only ever sent over the direct channel, never over the public relay.
 
-### 前端
+### Security and privacy
 
-- 單一 `index.html` 加上原生 JavaScript，沒有框架，也沒有建置步驟。
-- 棋盤格子只建立一次，之後只更新有變動的 class 和棋子，畫面不會閃。
-- 動畫只用 `transform` 和 `opacity`，搭配 `will-change`，在 CPU 降速 4 倍的模擬中階手機上仍維持 60fps。
-- 棋子字型用 Google Fonts 的 `text=` 參數，只下載棋盤會用到的十幾個字。
-- 每次發布都會更新 `version.txt`。頁面開啟時會先比對版本，發現有新版就自動重新載入，不會卡在舊快取。
+- **First guest holds the seat.** Moves from anyone else using the same room code are rejected. The seat opens to a new guest only after the current one has been silent for 60 seconds.
+- **Spectator events are allow-listed.** Stickers, reactions, and taunts forwarded to spectators are checked against the built-in sets. External links must be Tenor or Giphy URLs, and all text is HTML-escaped before display.
+- **No photo uploads.** To keep private photos from leaking, stickers come only from the built-in set or Tenor/Giphy links.
+- **Chat is not stored.** Messages live only in the players' browsers, and the host clears its relay data on leaving.
+- **Passwords are a light lock.** They stop people wandering in from the lobby, but traffic still passes through public brokers, so a determined eavesdropper could read it. Do not share sensitive information in chat.
+- **The host's browser holds the full board.** This is the inherent trade-off of a serverless design. It is fine between friends, but not suitable for games played for stakes.
+
+### Front end
+
+- A single `index.html` with vanilla JavaScript: no framework and no build step.
+- Board cells are created once and then patched in place, changing only the classes and pieces that differ, so nothing flickers.
+- Animations touch only `transform` and `opacity`, with `will-change` hints. Under 4× CPU throttling, which simulates a mid-range phone, every effect holds 60 fps with zero dropped frames.
+- The piece font is loaded with the Google Fonts `text=` parameter, so only the dozen or so characters used on the board are downloaded.
+- Each release bumps `version.txt`. On load, the page compares versions and reloads itself if a newer one is live, so players never get stuck on a stale cache.
+
+### Testing
+
+- Rule unit tests in Node (`test/logic.test.js`).
+- End-to-end tests that drive several headless Chrome tabs over the Chrome DevTools Protocol. They cover host and guest play, reconnection, spectating, passwords, phone layouts, forged-message attacks, a host tab crashing mid-game, and frame timing under CPU throttling.
 
 ---
 
-## 專案結構
+## Project structure
 
 ```
-index.html        介面、連線、特效與音效（單一檔案）
-logic.js          暗棋規則：純函式，瀏覽器和 Node 共用
-stickers.js       內建貼圖清單與分類
-stickers/         內建梗圖（WebP）
-voice/            嘲諷語音
-version.txt       版本號，給頁面偵測新版用
-test/             規則單元測試
+index.html        UI, networking, effects, and sound (single file)
+logic.js          Banqi rules as pure functions, shared by the browser and Node
+stickers.js       Built-in sticker catalogue and tabs
+stickers/         Built-in meme stickers (WebP)
+voice/            Taunt voice lines
+version.txt       Release number used for update detection
+test/             Rule unit tests
 ```
 
-## 本機開發
+## Local development
 
-用任何靜態伺服器都可以，例如：
+Any static file server works, for example:
 
 ```bash
 python -m http.server 8765
 ```
 
-開啟 `http://localhost:8765/`。網址加上 `?relay` 會只走 MQTT 中繼，加上 `?p2p` 只走直連，方便分別測試兩條通道。
+Then open `http://localhost:8765/`. Add `?relay` to the URL to force the MQTT relay only, or `?p2p` to force the direct channel only, which makes it easy to test each transport on its own.
 
-跑規則測試：
+Run the rule tests:
 
 ```bash
 node test/logic.test.js
 ```
 
-## 規則說明
+## Rules
 
-- 4 × 8 棋盤，雙方各 16 顆棋子，開局全部蓋著並隨機排列。
-- 第一個翻開的棋子決定翻棋那一方的顏色。
-- 每回合可以翻一顆棋，或移動自己的一顆棋。棋子只能上下左右走一格。
-- 大小順序是帥 > 仕 > 相 > 俥 > 傌 > 炮 > 兵（黑方是將、士、象、車、馬、包、卒），同級可以互吃。例外是兵可以吃帥，帥不能吃兵。
-- 炮吃子時必須隔一顆棋跳吃，隔的那顆翻開或蓋著都可以，距離不限，也不看大小。
-- 吃光對方的棋，或讓對方無棋可走就獲勝。連續 50 步沒有翻棋也沒有吃子，判為和棋。
+- A 4 × 8 board with 16 pieces per side. All pieces start face down in random positions.
+- The first piece flipped decides the flipping player's color.
+- On each turn a player either flips a piece or moves one of their own pieces one square orthogonally.
+- Ranks from high to low: General, Advisor, Elephant, Chariot, Horse, Cannon, Soldier (帥 仕 相 俥 傌 炮 兵 for red; 將 士 象 車 馬 包 卒 for black). A piece captures equal or lower ranks, with one exception: a Soldier can capture the General, but the General cannot capture a Soldier.
+- A Cannon captures by jumping over exactly one piece, face up or face down, at any distance and regardless of rank.
+- A player wins by capturing every opposing piece or leaving the opponent with no legal move. Fifty consecutive moves without a flip or a capture is a draw.
 
 ---
 
-梗圖、貼圖和音效的版權屬於原作者，這裡只供私人娛樂。
+Meme images, stickers, and sound clips belong to their original creators and are used here for private entertainment only.
