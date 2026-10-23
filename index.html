@@ -127,6 +127,12 @@
   .cell.sel .piece { transform: translateY(-9%) scale(1.1); z-index: 3; }
   .cell.sel .piece::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; box-shadow: 0 0 0 3px rgba(255, 210, 110, .95), 0 0 18px rgba(255, 200, 90, .7); }
   .ghost { position: absolute; width: 84%; height: 84%; pointer-events: none; z-index: 4; }
+  .impact { position: absolute; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 240, .95), rgba(255, 220, 140, .55) 40%, transparent 70%); }
+  .ring { position: absolute; border-radius: 50%; }
+  .crack { position: absolute; height: 3px; border-radius: 2px; transform-origin: 0 50%; background: linear-gradient(90deg, rgba(60, 30, 10, .9), rgba(60, 30, 10, 0)); }
+  .puff { position: absolute; border-radius: 50%; }
+  .speed { position: absolute; height: 3px; border-radius: 2px; transform-origin: 100% 50%; background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, .95)); }
+  .flyer { position: fixed; z-index: 15; pointer-events: none; }   /* under the effect words (#fx is 20) */
   .burst { position: absolute; width: 90%; height: 90%; border-radius: 50%; pointer-events: none; z-index: 5; box-shadow: 0 0 0 3px rgba(255, 200, 100, .9); animation: burst .5s ease-out forwards; }
   @keyframes burst { from { transform: scale(.4); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
 
@@ -158,6 +164,9 @@
   .ver { text-align: center; color: rgba(168, 153, 138, .5); font-size: 12px; margin-top: 24px; }
   /* effects (all one-shot, nothing loops) */
   #fx { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
+  /* words and banners live above everything (the board's shake makes its own layer, and flying pieces pass over it) */
+  #fxTop { position: fixed; inset: 0; pointer-events: none; z-index: 70; overflow: hidden; }
+  #fxTop .pop, #fxTop .banner { position: fixed; }
   .shard { position: absolute; border-radius: 2px; box-shadow: 0 0 6px rgba(255, 210, 120, .6); }
   .pop { position: absolute; font-family: var(--kai); font-weight: 700; color: #fff3d6; white-space: nowrap; line-height: 1;
     text-shadow: 0 2px 0 #7a3a10, 0 0 14px rgba(255, 170, 60, .9); -webkit-text-stroke: 1px #6b2a08; }
@@ -273,16 +282,17 @@
     <table class="ranks" id="rankTable"></table>
   </section>
 </main>
-<div class="ver">版本 8</div>
+<div id="fxTop"></div>
+<div class="ver">版本 9</div>
 <div id="overlay" class="hidden"><div class="card"><div class="stamp" id="ovStamp"></div><h2 id="ovTitle"></h2><p id="ovReason"></p><div class="row"><button class="primary" id="ovAgain" data-t="again"></button><button id="ovClose" data-t="close"></button></div></div></div>
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
-<script src="logic.js?v=8"></script>
-<script src="stickers.js?v=8"></script>
+<script src="logic.js?v=9"></script>
+<script src="stickers.js?v=9"></script>
 <script>
-const APP_VER = '8';
+const APP_VER = '9';
 (function checkVersion() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.text() : '')).then(v => {
     v = v.trim();
@@ -381,6 +391,15 @@ const sfx = {
   boom(d = 0) { noise(.5, { freq: 300, vol: .9, delay: d }); tone(110, .45, { vol: .5, delay: d, to: 40 }); },
   gong(d = 0) { [196, 263, 392, 587, 789].forEach((f, k) => tone(f * (1 + k * .003), 2.2 - k * .3, { vol: .22 / (k + 1), delay: d, attack: .01 })); noise(.15, { freq: 2500, type: 'bandpass', q: 2, vol: .3, delay: d }); },
   combo(n, d = 0) { for (let k = 0; k < Math.min(n + 1, 6); k++) tone(PENTA[k + 1], .16, { type: 'triangle', vol: .2, delay: d + k * .07 }); },
+  whoosh(d = 0) { noise(.3, { freq: 1600, type: 'bandpass', q: .7, vol: .5, delay: d }); },
+  hit(d = 0) { knock(900, .1, .8, d); thump(d); },
+  hooves(d = 0) { knock(2000, .04, .45, d); knock(1500, .04, .45, d + .11); knock(2000, .04, .35, d + .22); knock(1500, .04, .3, d + .33); },
+  steps(d = 0) { [0, .15, .3].forEach((x, i) => tone(700 + i * 200, .06, { type: 'square', vol: .07, delay: d + x })); },
+  poke(d = 0) { tone(600, .14, { type: 'triangle', vol: .32, to: 1600, delay: d }); knock(2400, .05, .5, d); },
+  swish(d = 0) { noise(.22, { freq: 3000, type: 'highpass', vol: .35, delay: d }); },
+  slap(d = 0) { noise(.09, { freq: 1200, type: 'bandpass', q: 1, vol: 1, delay: d }); knock(1000, .08, .7, d); },
+  stomp(d = 0) { tone(65, .55, { vol: .75, to: 32, delay: d }); noise(.4, { freq: 180, vol: 1, delay: d }); },
+  royal(d = 0) { [523, 659, 784, 1047].forEach((f, i) => tone(f, .9, { type: 'triangle', vol: .13, delay: d + i * .06 })); },
   boing() { tone(260, .28, { type: 'triangle', vol: .28, to: 760 }); tone(760, .22, { type: 'triangle', vol: .16, delay: .2, to: 520 }); },
   bloop() { tone(420, .14, { vol: .25, to: 900 }); tone(900, .1, { vol: .12, delay: .1, to: 1300 }); },
   stamp() { thump(); noise(.12, { freq: 900, vol: .5 }); },
@@ -440,6 +459,8 @@ portraitMQ.addEventListener('change', () => { if (state) { fitBoard(true); rende
 // ---------- rendering ----------
 function render(animate = true) {
   fitBoard();
+  capDelay = animate && !reduced && prev && state.last && state.last.cap && state.moveNo === prev.moveNo + 1 && state.board[state.last.to]
+    ? CAP[state.board[state.last.to].t].impact + 600 : 0;
   const board = $('board'), myRole = me(), myTurn = state.turn === myRole && !state.winner;
   const myCol = state.colors && state.colors[myRole];
   const tg = sel != null ? B.targets(state.board, sel) : [];
@@ -491,7 +512,7 @@ function animateFrom(p) {
   if (s.moveNo === 0 && (p.gid !== s.gid || p.moveNo > 0)) return deal();
   if (!last) return;
   if (s.moveNo !== p.moveNo + 1) return;
-  playSound(p);
+  if (!last.cap) playSound(p);   // captures make their own sounds in effects()
   effects(p, s);
   if (last.type === 'flip') {
     const el = pieceIn(last.i), back = document.createElement('div');
@@ -503,24 +524,120 @@ function animateFrom(p) {
   }
   const from = cellOf(last.from), to = cellOf(last.to), el = pieceIn(last.to);
   const a = from.getBoundingClientRect(), b = to.getBoundingClientRect(), dx = a.left - b.left, dy = a.top - b.top;
-  const dist = Math.hypot(dx, dy), cannon = s.board[last.to].t === 'C' && last.cap;
-  to.style.zIndex = 6;
-  const frames = cannon
-    ? [{ transform: `translate(${dx}px,${dy}px) scale(1.05)` }, { transform: `translate(${dx / 2}px,${dy / 2 - dist * .35 - 20}px) scale(1.35)`, offset: .5 }, { transform: 'translate(0,0) scale(1)' }]
-    : [{ transform: `translate(${dx}px,${dy}px) scale(1.08)` }, { transform: 'translate(0,0) scale(1)' }];
-  const dur = cannon ? 520 : 300;
-  el.animate(frames, { duration: dur, easing: 'cubic-bezier(.25,.8,.25,1)' }).onfinish = () => { to.style.zIndex = ''; };
-  if (last.cap) {
-    const victim = p.board[last.to], g = pieceEl(victim);
-    g.classList.add('ghost');
-    to.appendChild(g);
-    g.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1)', opacity: 1, offset: .55 }, { transform: 'scale(1.35) rotate(18deg)', opacity: 0, filter: 'blur(2px)' }],
-      { duration: dur + 260, easing: 'ease-out' }).onfinish = () => g.remove();
-    setTimeout(() => { const bu = document.createElement('div'); bu.className = 'burst'; to.appendChild(bu); setTimeout(() => bu.remove(), 520); }, dur - 40);
+  if (!last.cap) {
+    el.animate([{ transform: `translate(${dx}px,${dy}px) scale(1.08)` }, { transform: 'translate(0,0) scale(1)' }], { duration: 300, easing: 'cubic-bezier(.25,.8,.25,1)' });
+    return;
   }
+  const att = s.board[last.to], mv = capMove(att.t, dx, dy), imp = CAP[att.t].impact;
+  to.style.zIndex = 6; el.style.zIndex = 5;
+  el.animate(mv.frames, { duration: mv.dur, easing: mv.easing }).onfinish = () => { to.style.zIndex = ''; el.style.zIndex = ''; };
+  if (att.t === 'R') for (let k = 1; k <= 3; k++) {   // chariot after-images
+    const gh = pieceEl(att);
+    gh.classList.add('ghost'); gh.style.opacity = .45 - k * .11; to.appendChild(gh);
+    gh.animate(mv.frames, { duration: mv.dur, delay: k * 40, easing: mv.easing, fill: 'backwards' }).onfinish = () => gh.remove();
+  }
+  if (att.t === 'K') el.animate([{ filter: 'drop-shadow(0 0 0 rgba(255,200,80,0))' }, { filter: 'drop-shadow(0 0 18px rgba(255,200,80,1))', offset: .5 }, { filter: 'drop-shadow(0 0 0 rgba(255,200,80,0))' }], { duration: mv.dur + 300 });
+  // the victim waits under the attacker until the hit, then pops away
+  const g = pieceEl(p.board[last.to]);
+  g.classList.add('ghost'); g.style.zIndex = 1; to.appendChild(g);
+  g.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1)', opacity: 1, offset: imp / (imp + 90) }, { transform: 'scale(.6)', opacity: 0 }], { duration: imp + 90 }).onfinish = () => g.remove();
 }
 // ---------- effects ----------
 const streak = { host: 0, guest: 0 };
+// Each attacking piece captures in its own way: word, when it lands (ms), extra shake, sounds.
+const CAP = {
+  R: { word: '衝鋒！', impact: 235, shake: 6, start: () => sfx.whoosh(.03), hit: () => sfx.hit() },
+  H: { word: '飛馬踢！', impact: 420, shake: 5, start: () => sfx.hooves(), hit: () => sfx.hit() },
+  C: { word: '砰！', impact: 520, shake: 8, start: () => sfx.whoosh(.12), hit: () => sfx.boom() },
+  P: { word: '戳！', impact: 430, shake: 3, start: () => sfx.steps(), hit: () => sfx.poke() },
+  A: { word: '喝！', impact: 335, shake: 5, start: () => sfx.swish(.12), hit: () => sfx.slap() },
+  E: { word: '重踩！', impact: 445, shake: 10, start: () => {}, hit: () => sfx.stomp() },
+  K: { word: '王令！', impact: 470, shake: 6, start: () => sfx.royal(), hit: () => sfx.hit() },
+};
+// Movement keyframes from the start square (offset dx, dy) to the target square, per attacker type.
+function capMove(type, dx, dy) {
+  const T = (x, y, sc = 1) => ({ transform: `translate(${x}px,${y}px) scale(${sc})` }), dist = Math.hypot(dx, dy);
+  const at = (f, o) => Object.assign(f, { offset: o });
+  switch (type) {
+    case 'R': return { dur: 260, easing: 'cubic-bezier(.7,0,.9,.6)', frames: [T(dx, dy), at(T(0, 0, 1.14), .9), T(0, 0)] };
+    case 'H': return { dur: 480, easing: 'cubic-bezier(.3,.6,.4,1)', frames: [T(dx, dy), at(T(dx / 2, dy / 2 - dist * .5 - 30, 1.3), .5), at({ transform: 'translate(0,0) scale(1.15,.82)' }, .88), T(0, 0)] };
+    case 'C': return { dur: 540, easing: 'cubic-bezier(.25,.8,.25,1)', frames: [T(dx, dy, 1.05), at(T(dx / 2, dy / 2 - dist * .35 - 20, 1.35), .5), T(0, 0)] };
+    case 'P': {
+      const f = [];
+      for (let k = 0; k < 3; k++) { f.push(at(T(dx * (1 - k / 3), dy * (1 - k / 3)), k * .3)); f.push(at(T(dx * (1 - (k + .5) / 3), dy * (1 - (k + .5) / 3) - 14, 1.04), (k + .5) * .3)); }
+      f.push(at(T(0, 0, 1.15), .9), T(0, 0));
+      return { dur: 480, easing: 'linear', frames: f };
+    }
+    case 'A': return { dur: 420, easing: 'cubic-bezier(.5,0,.3,1)', frames: [T(dx, dy), at(T(dx * 1.2, dy * 1.2, .92), .35), at(T(-dx * .08, -dy * .08, 1.16), .8), T(0, 0)] };
+    case 'E': return { dur: 520, easing: 'cubic-bezier(.4,0,.6,1)', frames: [T(dx, dy), at(T(dx / 2, dy / 2 - 34, 1.4), .5), at(T(0, 0, .88), .86), T(0, 0)] };
+    default: return { dur: 520, easing: 'ease-in-out', frames: [T(dx, dy, 1.05), at(T(dx * .15, dy * .15, 1.2), .7), T(0, 0)] };
+  }
+}
+const cardOf = role => (mode === 'local' ? (role === 'host' ? 'pMe' : 'pOpp') : (role === mode ? 'pMe' : 'pOpp'));
+let capDelay = 0;   // new captured-piece icons wait until the flying piece arrives
+function ring(i, color, delay, scale) {
+  const [x, y, w] = centerOf(i), r = fxEl('ring', x, y);
+  r.style.width = r.style.height = w * .9 + 'px'; r.style.boxShadow = `0 0 0 3px ${color}, 0 0 14px ${color}`;
+  r.animate([{ transform: 'translate(-50%,-50%) scale(.4)', opacity: 1 }, { transform: `translate(-50%,-50%) scale(${scale})`, opacity: 0 }],
+    { duration: 520, delay, easing: 'ease-out', fill: 'backwards' }).onfinish = () => r.remove();
+}
+function puffs(i, n, color, rise, size) {
+  const [x, y, w] = centerOf(i);
+  for (let k = 0; k < n; k++) {
+    const d = fxEl('puff', x + (Math.random() - .5) * w * .7, y + w * (rise ? .1 : .3)), sz = w * size * (.7 + Math.random() * .6);
+    d.style.width = d.style.height = sz + 'px'; d.style.background = `radial-gradient(circle, ${color}, transparent 70%)`;
+    const mx = (Math.random() - .5) * w * .9, my = -(rise ? w * .6 : w * .25) * (.5 + Math.random());
+    d.animate([{ transform: 'translate(-50%,-50%) scale(.3)', opacity: .9 }, { transform: `translate(calc(-50% + ${mx}px), calc(-50% + ${my}px)) scale(1.5)`, opacity: 0 }],
+      { duration: 650 + Math.random() * 400, easing: 'ease-out' }).onfinish = () => d.remove();
+  }
+}
+function cracks(i) {
+  const [x, y, w] = centerOf(i);
+  for (let k = 0; k < 7; k++) {
+    const c = fxEl('crack', x, y);
+    c.style.transform = `rotate(${k * 360 / 7 + Math.random() * 25}deg)`;
+    c.animate([{ width: '0px', opacity: 1 }, { width: w * (.6 + Math.random() * .35) + 'px', opacity: 1, offset: .3 }, { width: w * .8 + 'px', opacity: 0 }], { duration: 1000, easing: 'ease-out' }).onfinish = () => c.remove();
+  }
+}
+function speedLines(i, ang) {
+  const [x, y, w] = centerOf(i);
+  for (let k = -2; k <= 2; k++) {
+    const l = fxEl('speed', x - Math.cos(ang) * w * .45 - Math.sin(ang) * k * w * .14, y - Math.sin(ang) * w * .45 + Math.cos(ang) * k * w * .14);
+    l.style.width = w * (.5 + Math.random() * .3) + 'px';
+    l.style.marginLeft = -parseFloat(l.style.width) + 'px';
+    l.style.transform = `rotate(${ang}rad)`;
+    l.animate([{ opacity: 0, transform: `rotate(${ang}rad) scaleX(.2)` }, { opacity: 1, transform: `rotate(${ang}rad) scaleX(1)`, offset: .3 }, { opacity: 0, transform: `rotate(${ang}rad) scaleX(1.2)` }], { duration: 420 }).onfinish = () => l.remove();
+  }
+}
+function impactFx(i, type, victim, ang) {
+  const [x, y, w] = centerOf(i), im = fxEl('impact', x, y);
+  im.style.width = im.style.height = w + 'px';
+  im.animate([{ transform: 'translate(-50%,-50%) scale(.3)', opacity: 1 }, { transform: 'translate(-50%,-50%) scale(1.8)', opacity: 0 }], { duration: 340, easing: 'ease-out' }).onfinish = () => im.remove();
+  ring(i, 'rgba(255,210,120,.95)', 0, 1.7);
+  ring(i, victim.c === 'r' ? 'rgba(230,70,50,.85)' : 'rgba(240,230,210,.85)', 90, 2.3);
+  shards(i, ['#f7ecd6', victim.c === 'r' ? '#d9402e' : '#2a2725', '#e0ad52'], 22);
+  if (type === 'H') puffs(i, 9, 'rgba(150,105,60,.75)', false, .3);
+  if (type === 'C') puffs(i, 7, 'rgba(190,180,170,.75)', true, .45);
+  if (type === 'E') cracks(i);
+  if (type === 'A' || type === 'R') speedLines(i, ang);
+  if (type === 'K') shards(i, ['#ffd34d', '#fff1b0', '#e0ad52'], 16);
+}
+// The captured piece spins off the board into the capturer's trophy row.
+function flyToCard(i, victim, role) {
+  const card = $(cardOf(role)), tgt = card.querySelector('.caps').getBoundingClientRect(), src = cellOf(i).getBoundingClientRect();
+  if (tgt.bottom < 0 || src.bottom < 0) return;
+  const f = pieceEl(victim), size = src.width * .84;
+  f.classList.add('flyer');
+  f.style.setProperty('--cell', src.width + 'px');
+  Object.assign(f.style, { left: src.left + src.width * .08 + 'px', top: src.top + src.height * .08 + 'px', width: size + 'px', height: size + 'px' });
+  document.body.appendChild(f);
+  const tx = tgt.left + tgt.width / 2 - (src.left + src.width / 2), ty = tgt.top + tgt.height / 2 - (src.top + src.height / 2);
+  f.animate([{ transform: 'translate(0,0) scale(.8) rotate(0)', opacity: .95 }, { transform: `translate(${tx * .5}px,${ty * .5 - 60}px) scale(.65) rotate(200deg)`, offset: .45 },
+    { transform: `translate(${tx}px,${ty}px) scale(.22) rotate(360deg)`, opacity: .9 }], { duration: 650, delay: 80, easing: 'cubic-bezier(.5,0,.6,1)', fill: 'backwards' }).onfinish = () => {
+    f.remove();
+    card.animate([{ transform: 'scale(1.04)' }, { transform: 'scale(1)' }], { duration: 220 });
+  };
+}
 const wrapEl = () => document.querySelector('.board-wrap');
 function centerOf(i) {
   const w = wrapEl().getBoundingClientRect(), r = cellOf(i).getBoundingClientRect();
@@ -543,15 +660,22 @@ function shards(i, colors, n = 14) {
       { duration: 550 + Math.random() * 350, easing: 'cubic-bezier(.1,.7,.3,1)' }).onfinish = () => d.remove();
   }
 }
+function topEl(cls, x, y, html) {
+  const d = document.createElement('div');
+  d.className = cls; d.style.left = x + 'px'; d.style.top = y + 'px'; d.innerHTML = html;
+  $('fxTop').appendChild(d);
+  return d;
+}
 function popText(i, text, cls = '') {
-  const [x, y, w] = centerOf(i), d = fxEl('pop ' + cls, x, y, text);
-  d.style.fontSize = Math.max(18, w * .42) + 'px';
+  const r = cellOf(i).getBoundingClientRect(), w = r.width, d = topEl('pop ' + cls, r.left + w / 2, r.top + r.height / 2, text);
+  d.style.fontSize = Math.max(18, w * (cls.includes('big') ? .56 : .42)) + 'px';
   d.animate([{ transform: 'translate(-50%,-50%) scale(.3)', opacity: 0 }, { transform: 'translate(-50%,-90%) scale(1.15)', opacity: 1, offset: .25 },
     { transform: 'translate(-50%,-120%) scale(1)', opacity: 1, offset: .7 }, { transform: 'translate(-50%,-150%) scale(.95)', opacity: 0 }],
     { duration: 1100, easing: 'ease-out' }).onfinish = () => d.remove();
 }
 function banner(text, sub, cls = '', delay = 0) {
-  const w = wrapEl(), d = fxEl('banner ' + cls, w.clientWidth / 2, w.clientHeight / 2, `<div class="bt">${text}</div>${sub ? `<div class="bs">${sub}</div>` : ''}`);
+  const r = wrapEl().getBoundingClientRect();
+  const d = topEl('banner ' + cls, r.left + r.width / 2, Math.min(Math.max(r.top + r.height / 2, 80), innerHeight - 80), `<div class="bt">${text}</div>${sub ? `<div class="bs">${sub}</div>` : ''}`);
   d.style.opacity = 0;
   d.animate([{ transform: 'translate(-50%,-50%) scale(2.2)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: .18 },
     { transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: .78 }, { transform: 'translate(-50%,-50%) scale(.9)', opacity: 0 }],
@@ -586,16 +710,19 @@ function effects(p, s) {
     return;
   }
   if (!last.cap) { streak[mover] = 0; return; }
-  const n = ++streak[mover], victim = p.board[last.to], att = s.board[last.to], cannon = att.t === 'C';
+  const n = ++streak[mover], victim = p.board[last.to], att = s.board[last.to], st = CAP[att.t];
+  const fa = cellOf(last.from).getBoundingClientRect(), ta = cellOf(last.to).getBoundingClientRect(), ang = Math.atan2(ta.top - fa.top, ta.left - fa.left);
+  st.start();
   setTimeout(() => {
-    shards(last.to, ['#f7ecd6', victim.c === 'r' ? '#d9402e' : '#2a2725', '#e0ad52'], 16);
+    impactFx(last.to, att.t, victim, ang);
+    flyToCard(last.to, victim, mover);
+    st.hit();
     let big = false;
     if (att.t === 'P' && victim.t === 'K') { banner('小兵立大功！', `${CH[att.c].P}吃${CH[victim.c].K}`, att.c); shake(10); flash('rgba(255,210,110,.7)'); sfx.gong(.05); big = true; }
     else if (victim.t === 'K') { banner('斬將！', `${CH[att.c][att.t]}吃${CH[victim.c].K}`, att.c); shake(10); flash('rgba(230,70,50,.55)'); sfx.gong(.05); big = true; }
-    else if (cannon) { popText(last.to, '砰！', 'boom'); shake(7); sfx.boom(); }
-    else { popText(last.to, victim.t === 'R' || victim.t === 'A' ? '吃大子！' : '吃！'); if ('RAE'.includes(victim.t)) shake(4); }
+    else { popText(last.to, st.word, 'big' + (att.t === 'C' ? ' boom' : '')); shake(st.shake + ('RA'.includes(victim.t) ? 3 : 0)); }
     if (n >= 2) { banner(`連吃 ×${n}`, n >= 3 ? '停不下來！' : '', att.c, big ? 1500 : 250); sfx.combo(n, big ? 1.5 : .25); }
-  }, cannon ? 480 : 260);
+  }, st.impact);
 }
 
 function deal() {
@@ -627,7 +754,7 @@ function renderPlayers() {
     const caps = el.querySelector('.caps'), list = capCol ? state.captured[capCol] : [];
     if (caps.dataset.v !== capCol + list.join('')) {
       const keep = caps.dataset.v && caps.dataset.v.startsWith(capCol) ? caps.children.length : 0;
-      caps.innerHTML = list.map((k, n) => `<span class="mini ${capCol}" style="${n < keep ? 'animation:none' : ''}">${CH[capCol][k]}</span>`).join('');
+      caps.innerHTML = list.map((k, n) => `<span class="mini ${capCol}" style="${n < keep ? 'animation:none' : capDelay ? 'animation-delay:' + capDelay + 'ms' : ''}">${CH[capCol][k]}</span>`).join('');
       caps.dataset.v = capCol + list.join('');
     }
     el.classList.toggle('turn', !state.winner && state.turn === role);
