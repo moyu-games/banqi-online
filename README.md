@@ -59,10 +59,21 @@ flowchart LR
 ### Authoritative host
 
 - The player who creates the room holds the only true copy of the game and validates every move against the rules.
-- At the start of a game the 32 pieces are placed with a Fisher–Yates shuffle. Flipping a piece only reveals what was already placed there.
+- At the start of a game the 32 pieces are placed with a Fisher–Yates shuffle (see [Fair shuffle](#fair-shuffle)). Flipping a piece only reveals what was already placed there.
 - The guest sends intents only, such as "flip square 12" or "move 3 → 4". The host applies them if they are legal and broadcasts the new state.
 - Before the state leaves the host, face-down pieces are stripped from it, so the guest and spectators cannot read hidden pieces even with developer tools.
 - Every state carries a monotonically increasing sequence number (`seq`) and a game id (`gid`). Stale or duplicate states are dropped, and a message from a finished game can never pull a player back into it.
+
+### Fair shuffle
+
+Without a server, someone has to deal the board. To stop the host from picking a favourable layout, every online game uses a commit–reveal scheme:
+
+1. The host draws a 128-bit secret `hs` from `crypto.getRandomValues` and publishes only its hash `c = SHA-256(hs)`.
+2. After receiving `c`, the guest draws its own seed `gs` and sends it to the host.
+3. The layout is a Fisher–Yates shuffle driven by a PRNG (sfc32) seeded with `SHA-256(hs | gs)`. The host committed to `hs` before seeing `gs`, and the guest never sees `hs` during play, so neither side can steer where the pieces go.
+4. When the game ends, the host reveals `hs`. The guest checks that `SHA-256(hs)` matches `c`, that its own `gs` was used, and that every flip it saw matches the layout it can now rebuild. The result appears on the end screen; any mismatch shows a warning.
+
+This makes a rigged layout detectable. It cannot stop a host from peeking at face-down pieces in its own browser; that would need a trusted server or a mental-poker protocol. If the guest joins after the first move, that game is dealt by the host alone and the end screen says so.
 
 ### Dual transport
 
@@ -80,6 +91,8 @@ flowchart LR
 |---|---|
 | Direct (WebRTC) | 15 ms |
 | Relay only (MQTT) | 625 ms |
+
+Over the relay the guest no longer waits for that round trip: a move is drawn the moment it is tapped (it is fully determined by the visible board), and a flip lifts the piece until the host reveals it. Further taps are ignored while an action is in flight, a slow action is re-sent, and if the host refuses a move the board snaps back to the host's state.
 
 ### MQTT topic layout
 
@@ -101,7 +114,7 @@ flowchart LR
 - **No photo uploads.** To keep private photos from leaking, stickers come only from the built-in set or Tenor/Giphy links.
 - **Chat is not stored.** Messages live only in the players' browsers, and the host clears its relay data on leaving.
 - **Passwords are a light lock.** They stop people wandering in from the lobby, but traffic still passes through public brokers, so a determined eavesdropper could read it. Do not share sensitive information in chat.
-- **The host's browser holds the full board.** This is the inherent trade-off of a serverless design. It is fine between friends, but not suitable for games played for stakes.
+- **The host's browser holds the full board.** The fair shuffle stops the host from choosing the layout, but the host could still peek at face-down pieces. This is the inherent trade-off of a serverless design: fine between friends, not suitable for games played for stakes.
 
 ### Front end
 
@@ -114,7 +127,7 @@ flowchart LR
 ### Testing
 
 - Rule unit tests in Node (`test/logic.test.js`).
-- End-to-end tests that drive several headless Chrome tabs over the Chrome DevTools Protocol. They cover host and guest play, reconnection, spectating, passwords, phone layouts, forged-message attacks, a host tab crashing mid-game, and frame timing under CPU throttling.
+- End-to-end tests that drive several headless Chrome tabs over the Chrome DevTools Protocol. They cover host and guest play, reconnection, spectating, passwords, phone layouts, forged-message attacks, a host tab crashing mid-game, instant feedback over the relay (including dropped and refused moves), the fair shuffle (including a cheating host), and frame timing under CPU throttling.
 
 ---
 

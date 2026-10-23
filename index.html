@@ -94,10 +94,18 @@
   .sticker-show.bubble::before { content: ""; position: absolute; top: 50%; margin-top: -9px; border: 9px solid transparent; }
   .sticker-show.bubble.me::before { left: -18px; border-right-color: rgba(224, 173, 82, .75); }
   .sticker-show.bubble.opp::before { right: -18px; border-left-color: rgba(224, 173, 82, .75); }
+  .sticker-show.bubble.below::before { top: -18px; margin-top: 0; border-color: transparent; border-bottom-color: rgba(224, 173, 82, .75); }
+  .sticker-show.bubble.below.me::before { left: 21px; }
+  .sticker-show.bubble.below.opp::before { left: auto; right: 21px; }
   .player .who { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .player .caps { display: flex; flex-wrap: nowrap; overflow: hidden; gap: 2px; height: 20px; }
   .player.right .caps { justify-content: flex-end; }
   .player.turn { border-color: var(--gold); background: var(--gold-soft); box-shadow: 0 0 0 1px var(--gold), 0 0 24px rgba(224, 173, 82, .25); }
+  .player .host-tag { display: none; position: absolute; top: -8px; left: 12px; font-size: 10px; font-weight: 700; line-height: 1; padding: 3px 6px; border-radius: 6px; background: var(--on-bg); color: var(--on-ink); z-index: 2; pointer-events: none; }
+  .player.right .host-tag { left: auto; right: 12px; }
+  .player.is-host .host-tag { display: block; }
+  .watch-name { font-size: 12px; margin: 0 0 6px; }
+  .watch-name button { font-size: 12px; padding: 2px 8px; margin-left: 4px; }
   .player.turn .who::after { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); margin: 0 6px; vertical-align: middle; box-shadow: 0 0 8px var(--gold); }
   .vs { align-self: center; font-family: var(--kai); color: var(--muted); font-size: 18px; }
   @keyframes pulse { 50% { opacity: .25; transform: scale(.7); } }
@@ -152,6 +160,9 @@
   }
   .piece .back::after { content: ""; width: 62%; height: 62%; border-radius: 50%; box-shadow: inset 0 1px 1px rgba(0, 0, 0, .35), 0 1px 0 rgba(255, 220, 170, .18); }
   .piece.down.flippable { cursor: pointer; }
+  .fair-note { font-size: 13px; margin: -4px 0 12px; }
+  .piece.pending { animation: pendLift .42s ease-in-out infinite alternate; z-index: 3; }
+  @keyframes pendLift { from { transform: translateY(-5%) scale(1.06); } to { transform: translateY(-9%) scale(1.1); filter: drop-shadow(0 0 10px rgba(255, 200, 90, .8)); } }
   @media (hover: hover) { .piece.down.flippable:hover { transform: translateY(-4%) scale(1.05); } }
   .piece.mine { cursor: pointer; }
   @media (hover: hover) { .piece.mine:hover { transform: translateY(-4%) scale(1.04); } }
@@ -210,6 +221,7 @@
   .banner .bs { color: #cdbca6; font-size: 14px; }
   .flash { position: absolute; inset: 0; border-radius: 16px; }
   .emo { position: fixed; font-size: 42px; z-index: 80; pointer-events: none; line-height: 1; }
+  .sticker-show .emo-big { width: 100%; height: 100%; display: grid; place-items: center; font-size: 54px; line-height: 1; }
   .reacts { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
   .reacts button { padding: 3px 9px; font-size: 21px; line-height: 1.25; }
   .stamp { display: inline-grid; place-items: center; width: 108px; height: 108px; border: 5px solid currentColor; border-radius: 16px; margin-bottom: 10px;
@@ -265,6 +277,7 @@
   /* lobby, spectators, channels */
   .rooms { margin-top: 26px; text-align: left; }
   .rooms h4 { margin: 0 0 8px; font-size: 14px; color: var(--muted); font-weight: 600; text-align: center; }
+  .lobby-stats { display: block; font-weight: 400; font-size: 12px; margin-top: 2px; }
   .room { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--tint); margin-bottom: 8px; }
   .room .rav { width: 44px; height: 44px; flex: none; border-radius: 50%; background: var(--tint); }
   .room .rav img, .room .rav svg { width: 100%; height: 100%; object-fit: contain; display: block; padding: 2px; }
@@ -279,6 +292,9 @@
   .chan button.on { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); }
   .msg .tag { font-size: 11px; color: var(--muted); margin-right: 6px; }
   .msg.pub { background: rgba(70, 120, 220, .12); }
+  .msg .tag.mutable { cursor: pointer; text-decoration: underline dotted; }
+  .mute-bar { font-size: 12px; text-align: center; margin: 4px 0; }
+  .mute-bar a { color: inherit; }
   /* wide screens: board on the left, chat / stickers / taunts in a column on the right */
   @media (min-width: 1000px) {
     main { max-width: 1340px; }
@@ -396,7 +412,7 @@
       <button id="localBtn" data-t="local"></button>
     </div>
     <div class="rooms hidden" id="recent"><h4>最近的對局</h4><div id="recentList"></div></div>
-    <div class="rooms" id="rooms"><h4>大廳・公開房間</h4><div id="roomList" class="muted" style="text-align:center">連線中…</div></div>
+    <div class="rooms" id="rooms"><h4>大廳・公開房間 <span id="lobbyStats" class="lobby-stats"></span></h4><div id="roomList" class="muted" style="text-align:center">連線中…</div></div>
   </section>
 
   <!-- Game -->
@@ -409,9 +425,9 @@
     </div>
 
     <div class="players">
-      <div class="player" id="pMe" title="點這裡改名字和頭像"><div class="av"></div><div style="min-width:0"><div class="who"></div><div class="caps"></div></div></div>
+      <div class="player" id="pMe" title="點這裡改名字和頭像"><span class="host-tag">房主</span><div class="av"></div><div style="min-width:0"><div class="who"></div><div class="caps"></div></div></div>
       <div class="vs">vs</div>
-      <div class="player right" id="pOpp"><div class="av"></div><div style="min-width:0"><div class="who"></div><div class="caps"></div></div></div>
+      <div class="player right" id="pOpp"><span class="host-tag">房主</span><div class="av"></div><div style="min-width:0"><div class="who"></div><div class="caps"></div></div></div>
     </div>
     <div id="status"></div>
 
@@ -445,7 +461,9 @@
         <div class="muted tray-hint">為了隱私，不能從相簿上傳照片；想加新梗圖就到「我的」貼上 Tenor / Giphy 的圖片網址。</div>
       </div>
       <div id="chatLog"></div>
+      <div id="muteBar" class="muted mute-bar hidden">已屏蔽 <b id="muteN"></b> 人的公開訊息・<a href="#" id="muteClear">全部解除</a></div>
       <div class="chan hidden" id="chanRow"><button type="button" data-ch="priv" class="on">🔒 私人</button><button type="button" data-ch="pub">📢 公開</button></div>
+      <div id="watchName" class="muted watch-name hidden">你在聊天室的名字：<b id="watchNameV"></b><button type="button" id="watchNameBtn">改名</button></div>
       <form id="chatForm">
         <input type="text" id="chatInput" maxlength="200" autocomplete="off">
         <button data-t="send"></button>
@@ -477,16 +495,16 @@
 <div id="quick" class="hidden"></div>
 <div id="prof" class="hidden"><div class="card"><h3>你的名字和頭像</h3><input id="profName" maxlength="12" placeholder="名字（最多 12 個字）" autocomplete="off"><p class="muted" style="font-size:12px;margin:-4px 0 10px">名字會顯示給對手、觀眾和大廳，建議用暱稱，不要用真實姓名。</p><div class="av-grid" id="avGrid"></div><div class="row" style="justify-content:flex-end"><button class="primary" id="profSave">好了</button></div></div></div>
 <div id="ask" class="hidden"><div class="card"><p id="askText"></p><input id="askInput" class="hidden" type="password" maxlength="20" autocomplete="off" style="width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin:-6px 0 14px"><div class="row"><button class="primary" id="askYes"></button><button id="askNo"></button></div></div></div>
-<div class="ver">版本 17</div>
-<div id="overlay" class="hidden"><div class="card"><div class="stamp" id="ovStamp"></div><h2 id="ovTitle"></h2><p id="ovReason"></p><div class="row"><button class="primary" id="ovAgain" data-t="again"></button><button id="ovClose" data-t="close"></button></div></div></div>
+<div class="ver">版本 18</div>
+<div id="overlay" class="hidden"><div class="card"><div class="stamp" id="ovStamp"></div><h2 id="ovTitle"></h2><p id="ovReason"></p><p id="ovFair" class="muted fair-note"></p><div class="row"><button class="primary" id="ovAgain" data-t="again"></button><button id="ovClose" data-t="close"></button></div></div></div>
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
-<script src="logic.js?v=17"></script>
-<script src="stickers.js?v=17"></script>
+<script src="logic.js?v=18"></script>
+<script src="stickers.js?v=18"></script>
 <script>
-const APP_VER = '17';
+const APP_VER = '18';
 (function checkVersion() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.text() : '')).then(v => {
     v = v.trim();
@@ -531,6 +549,14 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} },
   del(k) { try { localStorage.removeItem(k); } catch (_) {} },
 };
+// A second tab that joins a room this same browser is hosting (e.g. trying both sides on one computer) gets its own
+// id and profile for this tab only; otherwise both players would share one name, avatar and id.
+const dupTab = (() => { const q = new URLSearchParams(location.search), r = q.get('room'); return !!r && /^[a-z0-9]{6}$/.test(r) && !q.has('host') && store.get('bq-cfg-' + r) !== null; })();
+const tabStore = {
+  get(k) { try { return sessionStorage.getItem(k); } catch (_) { return null; } },
+  set(k, v) { try { sessionStorage.setItem(k, v); } catch (_) {} },
+};
+const idStore = dupTab ? tabStore : store;
 const lang = 'zh';
 const t = k => T[lang][k];
 
@@ -733,7 +759,7 @@ function render(animate = true) {
       el = p ? cell.insertBefore(pieceEl(p), cell.firstChild) : null;
     }
     if (el) {
-      const pc = 'piece ' + (p.up ? p.c : 'down') + (myTurn && !p.up ? ' flippable' : '') + (myTurn && p.up && p.c === myCol ? ' mine' : '');
+      const pc = 'piece ' + (p.up ? p.c : 'down') + (myTurn && !p.up ? ' flippable' : '') + (myTurn && p.up && p.c === myCol ? ' mine' : '') + (pend && pend.action.type === 'flip' && pend.action.i === i ? ' pending' : '');
       if (el.className !== pc) el.className = pc;
     }
   });
@@ -1000,7 +1026,7 @@ function renderPlayers() {
     if (av.dataset.id !== avId) { const x = STICKERS.find(k => k.id === avId); av.innerHTML = (x ? stkArt(x) : '') + '<span class="colr"></span>'; av.dataset.id = avId; }
     const badge = av.querySelector('.colr');
     badge.className = 'colr ' + (col || ''); badge.textContent = col ? CH[col].K : '';
-    el.querySelector('.who').textContent = name + (col ? ' · ' + colName(col) : '');
+    el.querySelector('.who').textContent = (col ? colName(col) + '・' : '') + name;   // colour first, so a long name is what gets cut on a phone
     // pieces this player has captured = pieces of the other color that are gone
     const capCol = col ? (col === 'r' ? 'b' : 'r') : null;
     const caps = el.querySelector('.caps'), list = capCol ? state.captured[capCol] : [];
@@ -1010,6 +1036,7 @@ function renderPlayers() {
       caps.dataset.v = capCol + list.join('');
     }
     el.classList.toggle('turn', !state.winner && state.turn === role);
+    el.classList.toggle('is-host', role === 'host' && mode !== 'local');
   };
   if (mode === 'watch') {
     const w = watchInfo || {};
@@ -1059,6 +1086,8 @@ function showOver() {
   else title = state.winner === mode ? t('win') : t('lose');
   $('ovTitle').textContent = title;
   $('ovReason').textContent = reasonText();
+  const fs = state; $('ovFair').textContent = '';
+  fairNote(fs).then(txt => { if (state === fs || (state.gid === fs.gid && state.moveNo === fs.moveNo)) $('ovFair').textContent = txt; }).catch(() => {});
   $('overlay').classList.remove('hidden');
   const won = state.winner !== 'draw' && (mode === 'local' || mode === 'watch' || state.winner === mode);
   const st = $('ovStamp');
@@ -1092,6 +1121,7 @@ $('ovAgain').onclick = () => { hideOver(); newGame(true); };
 $('board').addEventListener('click', e => {
   if (mode === 'watch') return;
   ac();
+  if (pend) return;   // one action at a time while the host has not answered
   const cell = e.target.closest('.cell');
   if (!cell || !state || state.winner) return;
   const i = +cell.dataset.i, p = state.board[i], role = me();
@@ -1105,19 +1135,43 @@ $('board').addEventListener('click', e => {
 
 function act(action) {
   sel = null;
-  if (mode === 'guest') { send({ type: 'action', action }); return; }
+  if (seedBusy) { seedBusy.then(() => act(action)); return; }
+  if (mode === 'guest') { guestAct(action); return; }
   const role = mode === 'local' ? state.turn : 'host';
   const r = B.apply(state, role, action);
   if (!r.ok) { toast(r.err); render(false); return; }
   commit(r.state);
 }
 
+// The guest's action has to go to the host and back (a few ms direct, ~0.6 s over the relay). Meanwhile:
+// a move is shown at once (the guest can work it out itself), a flip lifts the piece, other taps are ignored,
+// and the action is re-sent if the answer is slow. The host's state always wins when it arrives.
+let pend = null;
+function guestAct(action) {
+  const base = state;
+  pend = { action, base, gid: base.gid, n: base.moveNo, tries: 1 };
+  send({ type: 'action', action });
+  const r = action.type === 'move' ? B.apply(base, 'guest', action) : null;
+  if (r && r.ok && !r.state.winner) { state = r.state; render(true); }   // a win needs the hidden pieces, so it waits for the host
+  else { knock(1500, .05, .25); render(false); }
+  clearTimeout(pend.timer); pend.timer = setTimeout(pendSlow, 1800);
+}
+function pendSlow() {
+  if (!pend) return;
+  if (pend.tries < 3) { pend.tries++; send({ type: 'action', action: pend.action }); pend.timer = setTimeout(pendSlow, 2500); return; }
+  const base = pend.base; endPend();
+  if (state !== base) state = base;
+  render(false);
+  toast('連線有點慢，這步沒送到，請再點一次');
+}
+function endPend() { if (pend) { clearTimeout(pend.timer); pend = null; } }
+
 function setState(s, animate = true) {
   if (mode === 'host') s.seq = ((state && state.seq) || 0) + 1;
   state = s;
   if (mode !== 'guest') store.set(storeKey(), JSON.stringify(state));
   render(animate);
-  if (mode === 'host') { sendState(); pubWatch(); }
+  if (mode === 'host') { sendState(); pubWatch(); ensureFair(); }
 }
 const storeKey = () => (mode === 'local' ? 'bq-local' : 'bq-room-' + room);
 
@@ -1137,7 +1191,71 @@ function resetGame() {
   undoPending = 0;
   setState(freshGame(first));
 }
-const freshGame = first => Object.assign(B.newGame(first), { gid: rid() });
+const freshGame = first => Object.assign(B.newGame(first, cryptoRnd), { gid: rid() });
+
+// ---------- fair shuffle ----------
+// A game's layout is rebuilt from SHA-256(hostSecret | guestSeed). The host first publishes only the hash of its
+// secret (a commitment), then the guest picks its seed, so neither side can steer where the pieces go. When the game
+// ends the host reveals the secret, and the guest checks every flip it saw against the layout it can now rebuild.
+const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+const randHex = n => hex(crypto.getRandomValues(new Uint8Array(n)));
+const sha256 = async str => hex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)));
+function cryptoRnd() { return crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296; }
+function seededRnd(h) {   // sfc32 seeded with the first 128 bits of a hex hash
+  let [a, b, c, d] = [0, 8, 16, 24].map(k => parseInt(h.slice(k, k + 8), 16) | 0);
+  const next = () => { const t = (((a + b) | 0) + d) | 0; d = (d + 1) | 0; a = b ^ (b >>> 9); b = (c + (c << 3)) | 0; c = (c << 21) | (c >>> 11); c = (c + t) | 0; return (t >>> 0) / 4294967296; };
+  for (let k = 0; k < 15; k++) next();
+  return next;
+}
+const dealFrom = async (hs, gs, first) => B.newGame(first, seededRnd(await sha256(hs + '|' + gs))).board;
+const HEX32 = /^[0-9a-f]{32}$/;
+let fairBusy = false, seedBusy = null;
+function ensureFair() {   // host: commit to a secret for a game nobody has touched yet
+  if (mode !== 'host' || fairBusy || !state || state.moveNo !== 0 || state.winner || state.fair) return;
+  fairBusy = true;
+  const gid = state.gid, hs = randHex(16);
+  sha256(hs).then(c => {
+    fairBusy = false;
+    if (state.gid !== gid || state.moveNo !== 0 || state.fair) return;
+    const s = JSON.parse(JSON.stringify(state)); s.fair = { hs, c }; setState(s, false);
+  });
+}
+function takeSeed(m) {    // host: re-deal the untouched board from both halves
+  const f = state.fair;
+  if (m.gid !== state.gid || state.moveNo !== 0 || state.winner || !f || !f.c || f.gs || seedBusy || typeof m.gs !== 'string' || !HEX32.test(m.gs)) return;
+  const gid = state.gid;
+  seedBusy = dealFrom(f.hs, m.gs, state.first).then(board => {
+    seedBusy = null;
+    if (state.gid !== gid || state.moveNo !== 0 || !state.fair || state.fair.gs) return;
+    const s = JSON.parse(JSON.stringify(state)); s.board = board; s.fair.gs = m.gs; setState(s, false);
+  });
+}
+// guest: the seed it gave and every flip it saw, kept across reloads
+let mySeed = {}, flipLog = { f: {} };
+const seedKey = () => 'bq-seed-' + room, flipKey = () => 'bq-flips-' + room;
+function guestFair(s) {
+  if (!mySeed.gid) { try { mySeed = JSON.parse(store.get(seedKey()) || '{}'); flipLog = JSON.parse(store.get(flipKey()) || '{"f":{}}'); } catch (_) {} }
+  if (flipLog.gid !== s.gid) flipLog = { gid: s.gid, f: {} };
+  const l = s.last, p = l && l.type === 'flip' && s.board[l.i];
+  if (p && p.up && !flipLog.f[l.i]) { flipLog.f[l.i] = p.c + p.t; store.set(flipKey(), JSON.stringify(flipLog)); }
+  if (s.fair && s.fair.c && !s.fair.gs && s.moveNo === 0 && !s.winner && mySeed.gid !== s.gid) {
+    mySeed = { gid: s.gid, gs: randHex(16) }; store.set(seedKey(), JSON.stringify(mySeed));
+    send({ type: 'seed', gid: s.gid, gs: mySeed.gs });
+  }
+}
+async function fairNote(s) {
+  const f = s.fair;
+  if (!f || !f.c || mode === 'local') return '';
+  if (!f.gs) return '這局開始時朋友還沒進來，由房主單獨洗牌。';
+  if (mode === 'watch') return '🎲 這局由雙方共同洗牌。';
+  if (mode !== 'guest') return '🎲 這局由雙方共同洗牌，朋友那邊會自動驗證。';
+  if (!f.hs || !HEX32.test(f.hs)) return '';
+  if (await sha256(f.hs) !== f.c) return '⚠️ 房主公開的密鑰和開局承諾對不上，洗牌可能被動過手腳。';
+  if (mySeed.gid === s.gid && mySeed.gs !== f.gs) return '⚠️ 這局洗牌沒有用你出的亂數。';
+  const b0 = await dealFrom(f.hs, f.gs, s.first), seen = flipLog.gid === s.gid ? flipLog.f : {}, n = Object.keys(seen).length;
+  const bad = Object.keys(seen).filter(i => !b0[i] || b0[i].c + b0[i].t !== seen[i]).length;
+  return bad ? `⚠️ 有 ${bad} 次翻棋和開局排法對不上，洗牌可能被動過手腳。` : `🎲 雙方共同洗牌，已驗證：${n} 次翻棋都符合開局排法。`;
+}
 
 // ---------- emoji reactions ----------
 const EMOJI = ['👍', '😂', '😱', '🔥', '😭', '🙏', '😎', '🤯'];
@@ -1152,16 +1270,7 @@ $('reacts').onclick = e => {
 function floatEmoji(e, mine) {
   if (!EMOJI.includes(e)) return;
   sfx.bloop();
-  for (let k = 0; k < 3; k++) {
-    const d = document.createElement('div');
-    d.className = 'emo'; d.textContent = e;
-    d.style.left = (mine ? 55 + Math.random() * 30 : 15 + Math.random() * 30) + 'vw';
-    d.style.bottom = '80px';
-    document.body.appendChild(d);
-    const sway = (Math.random() - .5) * 80;
-    d.animate([{ transform: 'translate(0,0) scale(.5)', opacity: 0 }, { transform: `translate(${sway / 2}px,-15vh) scale(1.3)`, opacity: 1, offset: .2 },
-      { transform: `translate(${sway}px,-55vh) scale(1)`, opacity: 0 }], { duration: 1800 + k * 250, delay: k * 140, easing: 'ease-out', fill: 'backwards' }).onfinish = () => d.remove();
-  }
+  popBubble(`<div class="emo-big">${e}</div>`, mine, 92, ' emoji');   // same bubble by the sender's avatar as a sticker
 }
 
 // ---------- stickers ----------
@@ -1293,20 +1402,35 @@ function showSticker(m, mine) {
   else if (typeof m.url === 'string' && LINK_RE.test(m.url)) { html = `<img src="${m.url}" alt="">`; if (!mine && mode !== 'watch') keepCustom(m.url); }
   else return;
   sfx.boing();
-  // A speech bubble right next to the sender's avatar (mine on the left card, the friend's on the right),
-  // never over the avatar or the board. If the cards are scrolled away, it shows mid-screen.
+  popBubble(html, mine);
+}
+// A speech bubble right next to the sender's avatar (mine on the left card, the friend's on the right),
+// never over the avatar or the board. If the cards are scrolled away, it shows mid-screen.
+function popBubble(html, mine, max = 124, extra = '') {
   const who = $(mine ? 'pMe' : 'pOpp');
   document.querySelectorAll('.sticker-show.' + (mine ? 'me' : 'opp')).forEach(x => x.remove());
   const c = who.getBoundingClientRect(), av = who.querySelector('.av').getBoundingClientRect(), boardTop = wrapEl().getBoundingClientRect().top;
   const d = document.createElement('div');
-  let size = Math.min(124, innerWidth * .33), x, y, origin, cls = 'sticker-show ' + (mine ? 'me' : 'opp');
-  if (c.bottom > 20 && c.top < innerHeight - 100) {
+  let size = Math.min(max, innerWidth * .33), x, y, origin, cls = 'sticker-show ' + (mine ? 'me' : 'opp') + extra;
+  // where the card's own content (avatar, name with colour, trophies) ends, so the bubble never covers it
+  const span = el => { const r = document.createRange(); r.selectNodeContents(el); const b = r.getBoundingClientRect(); return b.width ? b : null; };
+  const parts = [av, span(who.querySelector('.who')), span(who.querySelector('.caps'))].filter(Boolean);
+  const inner = mine ? Math.max(...parts.map(b => b.right)) : Math.min(...parts.map(b => b.left));
+  const free = mine ? c.right - inner - 18 : inner - c.left - 18;
+  if (c.bottom > 20 && c.top < innerHeight - 100 && free >= Math.min(size, 96)) {
+    size = Math.min(size, free);   // wide card: in its empty part, after the name
     y = Math.max(4, Math.min(c.top + c.height / 2 - size / 2, boardTop - 6 - size * 1.08));   // room for the pop-in overshoot
-    x = mine ? av.right + 14 : av.left - 14 - size;
+    x = mine ? inner + 14 : inner - 14 - size;
     origin = mine ? '0% 50%' : '100% 50%';
     cls += ' bubble';
+  } else if (c.bottom > 20 && c.top < innerHeight - 100) {
+    size = Math.min(max * .9, innerWidth * .3);   // narrow card (phone): just under the avatar, pointing up at it
+    y = c.bottom + 12;
+    x = mine ? Math.max(6, av.left + av.width / 2 - 30) : Math.min(innerWidth - 6 - size, av.right - av.width / 2 + 30 - size);
+    origin = mine ? '20% 0%' : '80% 0%';
+    cls += ' bubble below';
   } else {
-    size = Math.min(200, innerWidth * .5); x = (innerWidth - size) / 2; y = (innerHeight - size) / 2; origin = '50% 50%';
+    size = Math.min(max * 1.6, innerWidth * .5); x = (innerWidth - size) / 2; y = (innerHeight - size) / 2; origin = '50% 50%';
   }
   d.className = cls;
   Object.assign(d.style, { left: x + 'px', top: y + 'px', width: size + 'px', height: size + 'px', transformOrigin: origin });
@@ -1325,7 +1449,7 @@ const esc = v => String(v).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;
 const cleanName = v => String(v || '').replace(/\s+/g, ' ').trim().slice(0, 12);
 const AVATARS = STICKERS.filter(x => x.group === 'meme' || x.group === 'nailong' || (x.group === 'cat' && x.cut) || x.id.startsWith('m-')).map(x => x.id);
 let profile = null, oppProfile = null, profileShown = false;
-try { profile = JSON.parse(store.get('bq-profile')); } catch (_) {}
+try { profile = JSON.parse(idStore.get('bq-profile')); } catch (_) {}
 const hadProfile = !!(profile && typeof profile.name === 'string');
 if (!hadProfile) profile = { name: '玩家' + Math.floor(10 + Math.random() * 90), av: 'n-' + (1 + Math.floor(Math.random() * 24)) };
 if (!AVATARS.includes(profile.av)) profile.av = 'n-8';
@@ -1343,6 +1467,7 @@ function takeProfile(pf) {
   if (mode === 'host') { pubWatch(); pubLobby(); }
 }
 function openProfile() {
+  profileShown = true;   // asked once is enough, however the dialog was opened
   $('profName').value = profile.name;
   let pick = profile.av;
   const draw = () => { $('avGrid').innerHTML = AVATARS.map(id => { const x = STICKERS.find(k => k.id === id); return `<div class="pick${id === pick ? ' on' : ''}" data-av="${id}">${stkArt(x)}</div>`; }).join(''); };
@@ -1350,15 +1475,17 @@ function openProfile() {
   $('avGrid').onclick = e => { const el = e.target.closest('.pick'); if (el) { pick = el.dataset.av; draw(); } };
   $('profSave').onclick = () => {
     profile = { name: cleanName($('profName').value) || profile.name, av: pick };
-    store.set('bq-profile', JSON.stringify(profile));
+    idStore.set('bq-profile', JSON.stringify(profile));
     $('prof').classList.add('hidden');
     send({ type: 'profile', pf: myPf() });
     if (mode === 'host') { pubWatch(); pubLobby(); }
+    if (mode === 'watch') updateAudInfo();
     if (state) { renderPlayers(); renderStatus(); }
   };
   $('prof').classList.remove('hidden');
 }
 $('pMe').onclick = () => { if (mode === 'host' || mode === 'guest') openProfile(); };
+$('watchNameBtn').onclick = () => openProfile();
 
 // ---------- ask dialog ----------
 function ask(text, yes, no, withInput) {
@@ -1701,13 +1828,14 @@ function offerFollowUp(victim, cannon, combo) {
 $('quick').onclick = e => { const b = e.target.closest('[data-k]'); if (b) { sendTaunt(+b.dataset.k); $('quick').classList.add('hidden'); } };
 
 // ---------- chat ----------
-function addChat(who, text, pub, name, side) {   // side: 'me' | 'opp' shows it as a bubble by that avatar
+function addChat(who, text, pub, name, side, w) {   // side: 'me' | 'opp' shows it as a bubble by that avatar; w: public sender id (can be muted)
   const d = document.createElement('div');
   d.className = 'msg' + (who === 'me' ? ' me' : '') + (pub ? ' pub' : '');
   if (pub || lvl === 'chat') {
     const tag = document.createElement('span');
     tag.className = 'tag';
     tag.textContent = pub ? '📢 ' + (name || '') : '🔒 私人';
+    if (pub && w && who !== 'me') { tag.classList.add('mutable'); tag.dataset.w = w; tag.dataset.n = name || ''; tag.title = '點名字可以屏蔽這個人'; d.dataset.w = w; }
     d.appendChild(tag);
   }
   d.appendChild(document.createTextNode(text));
@@ -1721,8 +1849,9 @@ $('chatForm').onsubmit = e => {
   const v = $('chatInput').value.trim().slice(0, 200); if (!v) return;
   if (mode === 'watch' || chan === 'pub') {
     if (lvl !== 'chat' || !mq || !mq.connected) { toast('公開聊天沒有開放'); return; }
+    if (mode === 'watch' && !hadProfile && !profileShown) { profileShown = true; openProfile(); toast('先幫自己取個名字吧'); return; }   // the message stays in the box
     mq.publish(pubTopic(), JSON.stringify({ type: 'pub', id: rid(), w: myId, n: myName(), r: mode, text: v }), { qos: 1 });
-    addChat('me', v, true, myName(), mode === 'watch' ? null : 'me'); $('chatInput').value = '';
+    addChat('me', v, true, myName() + (mode === 'host' ? '（房主）' : mode === 'watch' ? '（觀眾）' : ''), mode === 'watch' ? null : 'me'); $('chatInput').value = '';
     return;
   }
   if (!online()) { toast(t('waiting')); return; }
@@ -1749,7 +1878,8 @@ const rid = () => Math.random().toString(36).slice(2, 12);
 const online = () => Date.now() - lastHeard < 12000;
 
 // What the guest is allowed to see: face-down pieces carry no type or color.
-const forGuest = st => Object.assign({}, st, { board: st.board.map(x => (x && !x.up ? { up: false } : x)) });
+const forGuest = st => Object.assign({}, st, { board: st.board.map(x => (x && !x.up ? { up: false } : x)),
+  fair: st.fair && (st.winner ? st.fair : { c: st.fair.c, gs: st.fair.gs }) });
 const sendState = () => send({ type: 'state', state: forGuest(state) });
 const validState = st => !!st && Array.isArray(st.board) && st.board.length === 32 && typeof st.seq === 'number' &&
   typeof st.gid === 'string' && (st.turn === 'host' || st.turn === 'guest') && !!st.captured && Array.isArray(st.captured.r) && Array.isArray(st.captured.b);
@@ -1809,11 +1939,11 @@ function receive(m, ch) {
   if (!wasOnline) updateConn();
   if (m.pf) takeProfile(m.pf);
   if (mode === 'host') {
-    if (m.type === 'hello' || m.type === 'ping') { if (m.type === 'hello' || m.gid !== state.gid || !(m.seq >= state.seq)) sendState(); if (m.type === 'hello') send({ type: 'profile' }); }
+    if (m.type === 'hello' || m.type === 'ping') { if (m.type === 'hello' || m.gid !== state.gid || !(m.seq >= state.seq)) sendState(); if (m.type === 'hello') { send({ type: 'profile' }); ensureFair(); } }
     else if (m.type === 'action') {
-      const r = B.apply(state, 'guest', m.action);
-      if (r.ok) commit(r.state); else sendState();
-    } else if (m.type === 'reset') { if (m.gid === state.gid) resetGame(); }
+      const go = () => { const r = B.apply(state, 'guest', m.action); if (r.ok) commit(r.state); else sendState(); };
+      if (seedBusy) seedBusy.then(go); else go();
+    } else if (m.type === 'seed') takeSeed(m); else if (m.type === 'reset') { if (m.gid === state.gid) resetGame(); }
     else if (m.type === 'resign') { if (m.gid === state.gid) doResign('guest'); }
     else if (m.type === 'undoReq') onUndoRequest(m);
     else if (m.type === 'undoAns') onUndoAnswer(m);
@@ -1828,7 +1958,9 @@ function receive(m, ch) {
     if (m.type === 'state') {
       const s = m.state;
       if (!validState(s) || deadGids.has(s.gid)) return;
-      if (state && s.gid === state.gid && s.seq <= state.seq) return; // older or same state arriving on the slower channel
+      const rejected = pend && state !== pend.base && s.gid === pend.gid && s.seq === pend.base.seq;   // the host refused the move we showed early
+      if (state && s.gid === state.gid && s.seq <= state.seq && !rejected) return; // older or same state arriving on the slower channel
+      if (pend && (rejected || s.gid !== pend.gid || s.moveNo !== pend.n)) endPend();
       if (state && s.gid !== state.gid) deadGids.add(state.gid);    // a new game (or the host started over): never go back to the old one
       const first = !state;
       state = s; gotState = true;
@@ -1836,6 +1968,7 @@ function receive(m, ch) {
       if (first) prev = null;
       if (state.moveNo === 0) hideOver();
       if (undoPending && state.moveNo !== undoPending) undoPending = 0;
+      guestFair(s);
       render(!first);
     } else if (m.type === 'chat') addChat('friend', String(m.text).slice(0, 200), false, '', 'opp');
     else if (m.type === 'react') floatEmoji(m.e, false);
@@ -1984,8 +2117,8 @@ $('cfgPwSave').onclick = async () => {
 const LVL_NAME = { off: '不開放', board: '只看棋盤', fun: '棋盤＋貼圖嘲諷', chat: '可公開聊天' };
 const FWD = ['sticker', 'taunt', 'board', 'react'];      // events spectators may see (level fun / chat)
 const lobbyTopic = r => `banqi-tw/v1/lobby/${r}`;
-let myId = store.get('bq-me');
-if (!myId || !/^[a-z0-9]{6,16}$/.test(myId)) { myId = Math.random().toString(36).slice(2, 12); store.set('bq-me', myId); }
+let myId = idStore.get('bq-me');
+if (!myId || !/^[a-z0-9]{6,16}$/.test(myId)) { myId = Math.random().toString(36).slice(2, 12); idStore.set('bq-me', myId); }
 let cfg = { lobby: false, watch: 'off', guest: null, guestSeen: 0 };   // host only, per room
 let lvl = 'off', audN = 0, watchInfo = null, watchOff = false, chan = 'priv';
 const cfgKey = () => 'bq-cfg-' + room;
@@ -2057,6 +2190,8 @@ function updateAudInfo() {
   if (mode === 'watch') {
     $('chatCard').classList.toggle('hidden', !canPub);
     $('chatInput').placeholder = '公開聊天（玩家和觀眾都看得到）';
+    $('watchName').classList.toggle('hidden', !canPub);
+    $('watchNameV').textContent = myName();
   }
 }
 function setChan(c) {
@@ -2068,11 +2203,28 @@ $('chanRow').onclick = e => { const b = e.target.closest('[data-ch]'); if (b) se
 function onPub(m) {
   if (!m || m.type !== 'pub' || typeof m.text !== 'string' || !m.id || seen.has(m.id) || m.w === myId) return;
   remember(m.id);
-  if (lvl !== 'chat') return;
-  const player = m.r === 'host' || m.r === 'guest', who = player ? '' : '（觀眾）';
+  if (lvl !== 'chat' || typeof m.w !== 'string' || !ID_RE.test(m.w) || mutedIds.has(m.w)) return;
+  const player = m.r === 'host' || m.r === 'guest', who = m.r === 'host' ? '（房主）' : player ? '' : '（觀眾）';
   const side = !player ? null : mode === 'watch' ? (m.r === 'host' ? 'me' : 'opp') : 'opp';
-  addChat('them', m.text.slice(0, 200), true, cleanName(m.n) + who, side);
+  addChat('them', m.text.slice(0, 200), true, cleanName(m.n) + who, side, m.w);
 }
+// Muting is per browser: it hides that person's public messages from you only.
+const ID_RE = /^[a-z0-9]{6,16}$/;
+const mutedIds = new Set((() => { try { return JSON.parse(store.get('bq-blocked')) || []; } catch (_) { return []; } })().filter(x => ID_RE.test(x)));
+const saveMuted = () => { store.set('bq-blocked', JSON.stringify([...mutedIds].slice(-300))); updateMuteBar(); };
+function updateMuteBar() { $('muteN').textContent = mutedIds.size; $('muteBar').classList.toggle('hidden', !mutedIds.size); }
+$('chatLog').addEventListener('click', e => {
+  const tag = e.target.closest('.tag.mutable'); if (!tag) return;
+  const w = tag.dataset.w, n = tag.dataset.n || '這個人';
+  ask(`屏蔽「${n}」？之後不會再看到他的公開訊息，只有你自己看不到，別人不受影響。`, '屏蔽', '取消').then(ok => {
+    if (!ok) return;
+    mutedIds.add(w); saveMuted();
+    $('chatLog').querySelectorAll('.msg').forEach(d => { if (d.dataset.w === w) d.remove(); });
+    toast('已屏蔽「' + n + '」');
+  });
+});
+$('muteClear').onclick = e => { e.preventDefault(); mutedIds.clear(); saveMuted(); toast('已解除全部屏蔽'); };
+updateMuteBar();
 // spectator side
 function onWatch(m) {
   if (mode !== 'watch') return;
@@ -2156,8 +2308,11 @@ function renderRooms() {
   // fresh = we heard it live in the last 90 s, or (for the copy kept on the relay) its own time is recent; old ones are dropped
   for (const k in lobbyRooms) { const m = lobbyRooms[k]; if (!(m._live && now - m._live < 600000) && !(typeof m.ts === 'number' && now - m.ts < 600000)) delete lobbyRooms[k]; }
   const list = Object.values(lobbyRooms).filter(m => (m._live && now - m._live < 90000) || (typeof m.ts === 'number' && now - m.ts < 180000)).sort((a, b) => (b._live || b.ts) - (a._live || a.ts));
+  const waiting = list.filter(m => m.st !== 'play').length, playing = list.length - waiting;
+  const watching = list.reduce((n, m) => n + Math.min(999, Math.max(0, Math.floor(+m.aud) || 0)), 0);
+  $('lobbyStats').textContent = [waiting && waiting + ' 間在等對手', playing && playing + ' 局對戰中', watching && watching + ' 人觀戰'].filter(Boolean).join('・');
   const el = $('roomList');
-  if (!list.length) { el.className = 'muted'; el.style.textAlign = 'center'; el.textContent = lobbyClient && lobbyClient.connected ? '目前沒有公開房間，建立一個吧！' : '連線中…'; return; }
+  if (!list.length) { el.className = 'muted'; el.style.textAlign = 'center'; el.textContent = lobbyClient && lobbyClient.connected ? '現在沒人開房，開一間等人加入吧！' : '連線中…'; return; }
   el.className = ''; el.style.textAlign = '';
   el.innerHTML = list.map(m => {
     const av = STICKERS.find(x => x.id === m.a && AVATARS.includes(m.a));
@@ -2245,12 +2400,13 @@ function loadOrNew() {
   if (typeof state.seq !== 'number') state.seq = 0;
   loadHistory();
   store.set(storeKey(), JSON.stringify(state));
+  setTimeout(ensureFair, 0);   // host: commit to this game's shuffle (only while nobody has moved)
 }
 
 function createRoom(pub) {
   ac();
   room = Math.random().toString(36).slice(2, 8);
-  store.set('bq-cfg-' + room, JSON.stringify({ lobby: pub, watch: pub ? 'fun' : 'off', guest: null, guestSeen: 0 }));
+  store.set('bq-cfg-' + room, JSON.stringify({ lobby: pub, watch: pub ? 'board' : 'off', guest: null, guestSeen: 0 }));
   history.replaceState(null, '', '?room=' + room + '&host=' + Math.random().toString(36).slice(2, 10));
   boot();
 }
