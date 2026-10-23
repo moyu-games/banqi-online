@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#16120e">
+<meta name="theme-color" content="#f4ecdd">
 <title>暗棋對戰</title>
 <meta name="description" content="跟朋友線上下暗棋，不用註冊。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,8 +11,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@700&text=%E5%B8%A5%E4%BB%95%E7%9B%B8%E4%BF%A5%E5%82%8C%E7%82%AE%E5%85%B5%E5%B0%87%E5%A3%AB%E8%B1%A1%E8%BB%8A%E9%A6%AC%E5%8C%85%E5%8D%92%E6%9A%97%E6%A3%8B&display=block">
 <style>
   :root {
-    --bg: #16120e; --bg2: #211a14; --surface: rgba(255, 244, 225, .055); --line: rgba(255, 236, 205, .12);
-    --ink: #f4ead9; --muted: #a8998a; --gold: #e0ad52; --gold-soft: rgba(224, 173, 82, .18);
+    --bg: #f4ecdd; --surface: rgba(255, 255, 255, .72); --line: rgba(90, 60, 30, .16); --tint: rgba(90, 60, 30, .06);
+    --card: #fffaf1; --field: #ffffff;
+    --ink: #2b2118; --muted: #7d6c5a; --gold: #a8711a; --gold-soft: rgba(201, 143, 46, .16);
     --red: #b8261c; --red-glow: rgba(214, 64, 46, .55); --black: #1b1a19; --black-glow: rgba(240, 230, 210, .45);
     --ivory-1: #fffaf0; --ivory-2: #f2e3c6; --ivory-3: #d8c197; --edge: #9c7c4f;
     --wood-1: #d8a35f; --wood-2: #c48a45; --wood-3: #a8702f; --grid: rgba(78, 42, 12, .55);
@@ -25,11 +26,11 @@
   body {
     margin: 0; min-height: 100svh; color: var(--ink);
     font: 15px/1.5 system-ui, -apple-system, "Segoe UI", "Noto Sans TC", "PingFang TC", sans-serif;
-    background: radial-gradient(1200px 600px at 50% -10%, #3a2a1a 0%, transparent 60%), radial-gradient(800px 500px at 100% 100%, #2a1d12 0%, transparent 60%), var(--bg);
+    background: radial-gradient(1200px 600px at 50% -10%, #fff7e6 0%, transparent 60%), radial-gradient(800px 500px at 100% 100%, #ead6b4 0%, transparent 60%), var(--bg);
   }
   main { max-width: 900px; margin: 0 auto; padding: 14px 16px 40px; }
   button { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); padding: 7px 14px; border-radius: 999px; cursor: pointer; transition: background .2s, border-color .2s, transform .1s; }
-  button:hover { border-color: rgba(255, 236, 205, .3); background: rgba(255, 244, 225, .09); }
+  button:hover { border-color: rgba(90, 60, 30, .35); background: #fff; }
   button:active { transform: scale(.96); }
   button.primary { background: linear-gradient(180deg, #e9b85c, #c98f2e); color: #2a1a06; border-color: transparent; font-weight: 700; box-shadow: 0 6px 20px rgba(224, 173, 82, .3); }
   button.icon { width: 38px; height: 38px; padding: 0; display: inline-grid; place-items: center; }
@@ -40,7 +41,7 @@
   /* top bar */
   .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .brand { display: flex; align-items: baseline; gap: 10px; }
-  .brand .zh { font-family: var(--kai); font-size: 28px; color: var(--gold); letter-spacing: 2px; text-shadow: 0 2px 12px rgba(224, 173, 82, .35); }
+  .brand .zh { font-family: var(--kai); font-size: 28px; color: var(--gold); letter-spacing: 2px; text-shadow: 0 1px 0 #fff; }
   .brand .en { font-weight: 700; letter-spacing: 1.5px; font-size: 14px; text-transform: uppercase; color: var(--muted); }
   .tools { display: flex; gap: 6px; }
 
@@ -63,24 +64,24 @@
   .player .disc { width: 30px; height: 30px; border-radius: 50%; flex: none; display: grid; place-items: center; font-family: var(--kai); font-size: 18px; background: #5a3e26; color: rgba(255, 230, 190, .5); box-shadow: inset 0 0 0 2px rgba(0,0,0,.25); }
   .player .disc.r { background: radial-gradient(circle at 35% 30%, var(--ivory-1), var(--ivory-2)); color: var(--red); box-shadow: inset 0 0 0 2px var(--red); }
   .player .disc.b { background: radial-gradient(circle at 35% 30%, var(--ivory-1), var(--ivory-2)); color: var(--black); box-shadow: inset 0 0 0 2px var(--black); }
-  .player .av { position: relative; width: 72px; height: 72px; flex: none; border-radius: 50%; background: rgba(255, 244, 225, .08); box-shadow: 0 0 0 3px #6b5a48; }
+  .player .av { position: relative; width: 72px; height: 72px; flex: none; border-radius: 50%; background: var(--tint); box-shadow: 0 0 0 3px rgba(90, 60, 30, .3); }
   .player .av > img, .player .av > svg { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; display: block; padding: 3px; }
   .player .av.r { box-shadow: 0 0 0 3px var(--red), 0 0 14px rgba(214, 64, 46, .55); }
-  .player .av.b { box-shadow: 0 0 0 3px #e9dfcc, 0 0 14px rgba(240, 230, 210, .35); }
+  .player .av.b { box-shadow: 0 0 0 3px #2b2118, 0 0 12px rgba(40, 30, 20, .3); }
   .player .av .colr { position: absolute; right: -5px; bottom: -5px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-family: var(--kai); font-size: 14px;
     background: radial-gradient(circle at 35% 30%, var(--ivory-1), var(--ivory-2)); box-shadow: inset 0 0 0 1.5px currentColor; }
   .player .av .colr.r { color: var(--red); } .player .av .colr.b { color: var(--black); } .player .av .colr:empty { display: none; }
   #pMe.editable { cursor: pointer; }
   #pMe.editable .who::before { content: "✎ "; color: var(--muted); font-weight: 400; }
   #prof { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(10, 7, 4, .6); z-index: 92; padding: 16px; animation: fade .2s both; }
-  #prof .card { background: linear-gradient(180deg, #2c2219, #1e1712); border: 1px solid rgba(224, 173, 82, .5); border-radius: 18px; padding: 18px 18px 16px; max-width: 460px; width: 100%; box-shadow: 0 30px 80px rgba(0, 0, 0, .6); animation: rise .35s cubic-bezier(.2, 1.4, .4, 1) both; }
+  #prof .card { background: var(--card); border: 1px solid rgba(224, 173, 82, .5); border-radius: 18px; padding: 18px 18px 16px; max-width: 460px; width: 100%; box-shadow: 0 30px 80px rgba(0, 0, 0, .6); animation: rise .35s cubic-bezier(.2, 1.4, .4, 1) both; }
   #prof h3 { margin: 0 0 10px; font-size: 17px; }
-  #prof input { width: 100%; font: inherit; font-size: 16px; color: var(--ink); background: rgba(0, 0, 0, .3); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; margin-bottom: 10px; }
+  #prof input { width: 100%; font: inherit; font-size: 16px; color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; margin-bottom: 10px; }
   .av-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 8px; max-height: 44vh; overflow-y: auto; padding: 4px; margin-bottom: 12px; }
-  .av-grid .pick { aspect-ratio: 1; border-radius: 50%; background: rgba(255, 244, 225, .06); border: 2px solid transparent; padding: 3px; cursor: pointer; }
+  .av-grid .pick { aspect-ratio: 1; border-radius: 50%; background: var(--tint); border: 2px solid transparent; padding: 3px; cursor: pointer; }
   .av-grid .pick img, .av-grid .pick svg { width: 100%; height: 100%; object-fit: contain; display: block; }
   .av-grid .pick.on { border-color: var(--gold); background: var(--gold-soft); }
-  .sticker-show.bubble { background: rgba(36, 27, 20, .96); border: 1.5px solid rgba(224, 173, 82, .75); border-radius: 18px; padding: 8px; }
+  .sticker-show.bubble { background: var(--card); border: 1.5px solid rgba(224, 173, 82, .75); border-radius: 18px; padding: 8px; }
   .sticker-show.bubble::before { content: ""; position: absolute; top: 50%; margin-top: -9px; border: 9px solid transparent; }
   .sticker-show.bubble.me::before { left: -18px; border-right-color: rgba(224, 173, 82, .75); }
   .sticker-show.bubble.opp::before { right: -18px; border-left-color: rgba(224, 173, 82, .75); }
@@ -99,7 +100,7 @@
   #status b { color: var(--gold); }
 
   .share { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .share input { flex: 1; min-width: 0; font: inherit; color: var(--ink); background: rgba(0,0,0,.25); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+  .share input { flex: 1; min-width: 0; font: inherit; color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
   .conn { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
   .conn .dot { width: 8px; height: 8px; border-radius: 50%; background: #8a7b6b; }
   .conn .dot.on { background: #3ccf7a; box-shadow: 0 0 10px #3ccf7a; }
@@ -158,23 +159,23 @@
   @keyframes burst { from { transform: scale(.4); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
 
   /* chat */
-  #chatLog { max-height: 120px; overflow-y: auto; font-size: 14px; display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+  #chatLog { max-height: 180px; overflow-y: auto; font-size: 14px; display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
   #chatLog:empty { display: none; }
-  .msg { padding: 5px 11px; border-radius: 12px; background: rgba(255, 244, 225, .08); align-self: flex-start; max-width: 80%; word-break: break-word; }
+  .msg { padding: 5px 11px; border-radius: 12px; background: var(--tint); align-self: flex-start; max-width: 80%; word-break: break-word; }
   .msg.me { background: var(--gold-soft); align-self: flex-end; }
   #chatForm { display: flex; gap: 8px; }
-  #chatInput { flex: 1; min-width: 0; font: inherit; color: var(--ink); background: rgba(0,0,0,.25); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; }
+  #chatInput { flex: 1; min-width: 0; font: inherit; color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; }
   #chatInput::placeholder { color: var(--muted); }
 
   /* rules */
-  .rules li { margin-bottom: 5px; color: #e6dccb; }
+  .rules li { margin-bottom: 5px; color: var(--ink); }
   table.ranks { border-collapse: collapse; width: 100%; font-size: 14px; margin-top: 8px; }
   table.ranks td, table.ranks th { border-bottom: 1px solid var(--line); padding: 5px 6px; text-align: left; }
   table.ranks td.k { font-family: var(--kai); font-size: 20px; }
 
   /* overlay */
   #overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(10, 7, 4, .6); backdrop-filter: blur(3px); z-index: 50; animation: fade .3s both; padding: 16px; }
-  #overlay .card { background: linear-gradient(180deg, #2c2219, #1e1712); border: 1px solid rgba(224, 173, 82, .5); border-radius: 20px; padding: 28px 30px; text-align: center; max-width: 360px; width: 100%; box-shadow: 0 30px 80px rgba(0, 0, 0, .6); animation: rise .5s cubic-bezier(.2, 1.4, .4, 1) both; }
+  #overlay .card { background: var(--card); border: 1px solid rgba(224, 173, 82, .5); border-radius: 20px; padding: 28px 30px; text-align: center; max-width: 360px; width: 100%; box-shadow: 0 30px 80px rgba(0, 0, 0, .6); animation: rise .5s cubic-bezier(.2, 1.4, .4, 1) both; }
   #overlay h2 { font-family: var(--kai); font-size: 40px; margin: 0 0 6px; color: var(--gold); letter-spacing: 2px; }
   #overlay p { color: var(--muted); margin: 0 0 20px; }
   #overlay .row { justify-content: center; }
@@ -195,9 +196,9 @@
   .banner { position: absolute; text-align: center; white-space: nowrap; padding: 10px 26px; border-radius: 14px;
     background: linear-gradient(180deg, rgba(40, 25, 12, .94), rgba(20, 12, 6, .94)); border: 2px solid var(--gold);
     box-shadow: 0 10px 40px rgba(0, 0, 0, .6), 0 0 30px rgba(224, 173, 82, .45); }
-  .banner .bt { font-family: var(--kai); font-size: clamp(28px, 7vw, 52px); color: var(--gold); letter-spacing: 3px; text-shadow: 0 0 18px rgba(255, 190, 80, .7); }
+  .banner .bt { font-family: var(--kai); font-size: clamp(28px, 7vw, 52px); color: #f2c46a; letter-spacing: 3px; text-shadow: 0 0 18px rgba(255, 190, 80, .7); }
   .banner.r .bt { color: #ff6b55; } .banner.b .bt { color: #f4ead9; }
-  .banner .bs { color: var(--muted); font-size: 14px; }
+  .banner .bs { color: #cdbca6; font-size: 14px; }
   .flash { position: absolute; inset: 0; border-radius: 16px; }
   .emo { position: fixed; font-size: 42px; z-index: 80; pointer-events: none; line-height: 1; }
   .reacts { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -207,10 +208,11 @@
   .stamp.lose { color: #8f8578; background: rgba(143, 133, 120, .08); text-shadow: none; }
   .stamp.draw { color: var(--gold); background: var(--gold-soft); }
   /* stickers */
-  .reacts .tray-btn { font-size: 14px; font-weight: 700; color: var(--gold); border-color: rgba(224, 173, 82, .5); }
+  .reacts .tray-btn { font-size: 14px; font-weight: 700; color: var(--gold); border-color: rgba(201, 143, 46, .5); }
+  .reacts .tray-btn.on { background: var(--gold); color: #fff; border-color: var(--gold); }
   .tray { margin-bottom: 10px; }
   .tray-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; max-height: 236px; overflow-y: auto; padding: 6px 4px 2px; }
-  .stk { position: relative; aspect-ratio: 1; border-radius: 12px; background: rgba(255, 244, 225, .06); border: 1px solid var(--line); padding: 4px; display: grid; place-items: center; cursor: pointer; }
+  .stk { position: relative; aspect-ratio: 1; border-radius: 12px; background: var(--tint); border: 1px solid var(--line); padding: 4px; display: grid; place-items: center; cursor: pointer; }
   .stk:active { transform: scale(.94); }
   .stk svg, .stk img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .stk .del { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; background: #6a2a20; color: #fff; font-size: 13px; line-height: 1; display: grid; place-items: center; border: 1px solid var(--line); }
@@ -220,7 +222,7 @@
   .sticker-show svg, .sticker-show img { width: 100%; height: 100%; object-fit: contain; display: block; }
   /* ask dialog, victory party, sticker tabs */
   #ask { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(10, 7, 4, .55); z-index: 90; padding: 16px; animation: fade .2s both; }
-  #ask .card { background: linear-gradient(180deg, #2c2219, #1e1712); border: 1px solid rgba(224, 173, 82, .5); border-radius: 18px; padding: 22px 24px; text-align: center; max-width: 340px; width: 100%; box-shadow: 0 30px 80px rgba(0, 0, 0, .6); animation: rise .35s cubic-bezier(.2, 1.4, .4, 1) both; }
+  #ask .card { background: var(--card); border: 1px solid rgba(224, 173, 82, .5); border-radius: 18px; padding: 22px 24px; text-align: center; max-width: 340px; width: 100%; box-shadow: 0 30px 80px rgba(0, 0, 0, .6); animation: rise .35s cubic-bezier(.2, 1.4, .4, 1) both; }
   #ask p { font-size: 17px; margin: 0 0 18px; }
   #ask .row { justify-content: center; }
   #party { position: fixed; inset: 0; pointer-events: none; z-index: 55; overflow: hidden; }
@@ -229,7 +231,7 @@
   .tray-tabs { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
   .tray-tabs button { padding: 4px 11px; font-size: 13px; }
   .link-form { display: flex; gap: 6px; margin-bottom: 6px; }
-  .link-form input { flex: 1; min-width: 0; font: inherit; font-size: 14px; color: var(--ink); background: rgba(0, 0, 0, .3); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; }
+  .link-form input { flex: 1; min-width: 0; font: inherit; font-size: 14px; color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; }
   .tray-tabs button.on { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); }
   button:disabled { opacity: .4; cursor: default; }
   .credit { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; }
@@ -238,7 +240,7 @@
   .taunts h4 { margin: 4px 0 6px; font-size: 13px; color: var(--muted); font-weight: 600; }
   .taunts .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
   .taunts .chips button { padding: 5px 11px; font-size: 14px; }
-  .player .think { position: absolute; bottom: 4px; font-size: 11px; color: var(--gold); background: rgba(0, 0, 0, .45); padding: 1px 8px; border-radius: 999px; white-space: nowrap; pointer-events: none; }
+  .player .think { position: absolute; bottom: 4px; font-size: 11px; color: #f2c46a; background: rgba(40, 28, 16, .75); padding: 1px 8px; border-radius: 999px; white-space: nowrap; pointer-events: none; }
   #pOpp .think { left: 10px; } #pMe .think { right: 10px; }
   .say { position: fixed; z-index: 86; pointer-events: none; max-width: min(240px, 60vw); padding: 10px 16px; border-radius: 18px; background: #fff7e6; color: #2a1a0a;
     font-family: var(--kai); font-weight: 700; font-size: 22px; line-height: 1.2; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, .5), 0 0 0 2px var(--gold); white-space: nowrap; }
@@ -246,13 +248,44 @@
   .say.me::before { left: -16px; border-right-color: #fff7e6; } .say.opp::before { right: -16px; border-left-color: #fff7e6; }
   .snail { position: fixed; z-index: 87; font-size: 56px; pointer-events: none; bottom: 22%; }
   #brag { position: fixed; inset: 0; z-index: 88; display: grid; place-items: center; pointer-events: none; }
-  #brag .card { background: rgba(28, 20, 14, .95); border: 2px solid var(--gold); border-radius: 18px; padding: 16px 20px; text-align: center; box-shadow: 0 20px 60px rgba(0, 0, 0, .6); max-width: calc(100vw - 32px); }
+  #brag .card { background: var(--card); border: 2px solid var(--gold); border-radius: 18px; padding: 16px 20px; text-align: center; box-shadow: 0 20px 60px rgba(0, 0, 0, .6); max-width: calc(100vw - 32px); }
   #brag .t { font-family: var(--kai); font-size: 24px; color: var(--gold); margin-bottom: 10px; }
   #brag .row { justify-content: center; gap: 6px; flex-wrap: wrap; }
   #brag .mini { width: 40px; height: 40px; font-size: 26px; }
   #quick { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 84; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: max-content; max-width: calc(100vw - 24px); }
-  #quick button { background: #2c2219; border-color: var(--gold); color: var(--gold); font-weight: 700; box-shadow: 0 8px 24px rgba(0, 0, 0, .5); }
-  #toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); background: #2c2219; border: 1px solid var(--line); color: var(--ink); padding: 9px 16px; border-radius: 999px; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; z-index: 70; max-width: calc(100% - 32px); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+  #quick button { background: var(--card); border-color: var(--gold); color: var(--gold); font-weight: 700; box-shadow: 0 8px 24px rgba(0, 0, 0, .5); }
+  /* lobby, spectators, channels */
+  .rooms { margin-top: 26px; text-align: left; }
+  .rooms h4 { margin: 0 0 8px; font-size: 14px; color: var(--muted); font-weight: 600; text-align: center; }
+  .room { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--tint); margin-bottom: 8px; }
+  .room .rav { width: 44px; height: 44px; flex: none; border-radius: 50%; background: var(--tint); }
+  .room .rav img, .room .rav svg { width: 100%; height: 100%; object-fit: contain; display: block; padding: 2px; }
+  .room .rinfo { flex: 1; min-width: 0; }
+  .room .rname { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .room .rst { font-size: 12px; color: var(--muted); }
+  .room button { padding: 6px 12px; font-size: 14px; }
+  .room-cfg { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; font-size: 14px; }
+  .room-cfg select { font: inherit; font-size: 14px; color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; }
+  .chan { display: flex; gap: 6px; margin-bottom: 6px; }
+  .chan button { padding: 3px 12px; font-size: 13px; }
+  .chan button.on { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); }
+  .msg .tag { font-size: 11px; color: var(--muted); margin-right: 6px; }
+  .msg.pub { background: rgba(70, 120, 220, .12); }
+  /* wide screens: board on the left, chat / stickers / taunts in a column on the right */
+  @media (min-width: 1000px) {
+    main { max-width: 1340px; }
+    #game:not(.hidden) { display: grid; grid-template-columns: minmax(0, 1fr) 370px; column-gap: 22px; align-items: start; }
+    .col-side { position: sticky; top: 10px; display: flex; flex-direction: column; max-height: calc(100vh - 84px); }
+    .col-side #chatCard { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+    .col-side #chatLog { flex: 1; max-height: none; min-height: 140px; }
+    .col-side .tray-grid { max-height: 32vh; }
+    body.ingame .ver { display: none; }
+  }
+  .say.chat { font-family: inherit; font-weight: 600; font-size: 15px; white-space: normal; max-width: min(300px, 64vw); text-align: left; }
+  #brand { cursor: pointer; }
+  @keyframes wiggle { 0%, 100% { transform: rotate(0) scale(1); } 25% { transform: rotate(-9deg) scale(1.06); } 50% { transform: rotate(0) scale(.96); } 75% { transform: rotate(9deg) scale(1.06); } }
+  .sticker-show .wiggle { animation: wiggle .5s ease-in-out 4 .35s; transform-origin: 50% 90%; }
+  #toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); background: #2c2219; border: 1px solid var(--line); color: #f4ead9; padding: 9px 16px; border-radius: 999px; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; z-index: 70; max-width: calc(100% - 32px); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
   @media (max-width: 600px) {
@@ -271,14 +304,18 @@
     .panel { margin-top: 8px; padding: 10px 12px; }
     #lobby .hero { font-size: 52px; }
   }
-  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  /* animations are on by default (remote desktop sessions report "reduce motion" even when people want the effects); the ✨ button turns them off */
+  body.calm *, body.calm *::before, body.calm *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  #animBtn.off { opacity: .45; }
 </style>
 </head>
 <body>
 <main>
   <div class="top">
-    <div class="brand"><span class="zh">暗棋</span></div>
+    <div class="brand" id="brand"><span class="zh">暗棋</span></div>
     <div class="tools">
+      <button id="homeBtn" class="hidden">← 回大廳</button>
+      <button class="icon" id="animBtn" title="動畫效果開／關" aria-label="動畫效果">✨</button>
       <button class="icon" id="soundBtn" aria-label="Sound"></button>
       <button class="icon" id="rulesBtn" aria-label="Rules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></button>
     </div>
@@ -290,13 +327,17 @@
     <div class="hero-pieces" id="heroPieces"></div>
     <p data-t="intro"></p>
     <div class="row">
-      <button class="primary" id="createBtn" data-t="create"></button>
+      <button class="primary" id="createPubBtn">建立公開房間</button>
+      <button id="createBtn" data-t="create"></button>
       <button id="localBtn" data-t="local"></button>
     </div>
+    <div class="rooms hidden" id="recent"><h4>最近的對局</h4><div id="recentList"></div></div>
+    <div class="rooms" id="rooms"><h4>大廳・公開房間</h4><div id="roomList" class="muted" style="text-align:center">連線中…</div></div>
   </section>
 
   <!-- Game -->
   <section id="game" class="hidden">
+    <div class="col-main">
     <div class="panel share" id="shareRow">
       <span class="muted" data-t="share"></span>
       <input type="text" id="shareLink" readonly>
@@ -314,9 +355,17 @@
 
     <div class="row" style="justify-content:space-between;margin-top:12px">
       <span class="conn" id="conn"></span>
-      <span class="row"><button id="inviteBtn" class="hidden">複製邀請連結</button><button id="hurryBtn" class="hidden">催 🐌</button><button id="undoBtn">悔棋</button><button id="resignBtn">認輸</button><button id="newBtn" data-t="newGame"></button></span>
+      <span class="conn" id="audInfo"></span>
+      <span class="row" id="gameBtns"><button id="inviteBtn" class="hidden">複製邀請連結</button><button id="hurryBtn" class="hidden">催 🐌</button><button id="undoBtn">悔棋</button><button id="resignBtn">認輸</button><button id="newBtn" data-t="newGame"></button></span>
     </div>
 
+    </div>
+    <aside class="col-side">
+    <div class="panel room-cfg hidden" id="roomCfg">
+      <label><input type="checkbox" id="cfgLobby"> 公開到大廳</label>
+      <label>觀戰 <select id="cfgWatch"><option value="off">不開放</option><option value="board">只看棋盤</option><option value="fun">棋盤＋貼圖嘲諷</option><option value="chat">再加公開聊天</option></select></label>
+      <button type="button" id="watchLinkBtn">複製觀戰連結</button>
+    </div>
     <div class="panel" id="chatCard">
       <div class="reacts" id="reacts"></div>
       <div class="taunts hidden" id="tauntPanel">
@@ -325,7 +374,7 @@
         <div class="chips"><button type="button" id="bragBtn">🏆 炫耀戰利品</button></div>
       </div>
       <div class="tray hidden" id="tray">
-        <div class="tray-tabs" id="trayTabs"><button type="button" data-g="meme" class="on">梗圖</button><button type="button" data-g="nailong">奶龍</button><button type="button" data-g="cat">跳舞貓</button><button type="button" data-g="cry">哭哭貓</button><button type="button" data-g="shock">震驚貓</button><button type="button" data-g="clap">拍手</button><button type="button" data-g="speechless">無言</button><button type="button" data-g="qibao">棋寶</button><button type="button" data-g="mine">我的</button></div>
+        <div class="tray-tabs" id="trayTabs"><button type="button" data-g="nailong" class="on">奶龍</button><button type="button" data-g="hot">🔥 熱門</button><button type="button" data-g="cats">貓貓</button><button type="button" data-g="react">反應</button><button type="button" data-g="meme">梗圖</button><button type="button" data-g="qibao">棋寶</button><button type="button" data-g="mine">我的</button></div>
         <form class="link-form hidden" id="linkForm"><input type="url" id="linkInput" placeholder="貼上 Tenor / Giphy 的圖片網址" autocomplete="off"><button class="primary">加入</button></form>
         <div class="muted tray-hint hidden" id="linkHint">在 Tenor 或 Giphy 長按（電腦按右鍵）圖片 →「複製圖片網址」，貼到上面就會加進來，而且會動。</div>
         <div class="tray-grid" id="trayGrid"></div>
@@ -334,11 +383,13 @@
         <input type="file" id="stickerFile" accept="image/*" hidden>
       </div>
       <div id="chatLog"></div>
+      <div class="chan hidden" id="chanRow"><button type="button" data-ch="priv" class="on">🔒 私人</button><button type="button" data-ch="pub">📢 公開</button></div>
       <form id="chatForm">
         <input type="text" id="chatInput" maxlength="200" autocomplete="off">
         <button data-t="send"></button>
       </form>
     </div>
+    </aside>
   </section>
 
   <section id="rules" class="panel hidden">
@@ -353,16 +404,16 @@
 <div id="quick" class="hidden"></div>
 <div id="prof" class="hidden"><div class="card"><h3>你的名字和頭像</h3><input id="profName" maxlength="12" placeholder="名字（最多 12 個字）" autocomplete="off"><div class="av-grid" id="avGrid"></div><div class="row" style="justify-content:flex-end"><button class="primary" id="profSave">好了</button></div></div></div>
 <div id="ask" class="hidden"><div class="card"><p id="askText"></p><div class="row"><button class="primary" id="askYes"></button><button id="askNo"></button></div></div></div>
-<div class="ver">版本 13</div>
+<div class="ver">版本 14</div>
 <div id="overlay" class="hidden"><div class="card"><div class="stamp" id="ovStamp"></div><h2 id="ovTitle"></h2><p id="ovReason"></p><div class="row"><button class="primary" id="ovAgain" data-t="again"></button><button id="ovClose" data-t="close"></button></div></div></div>
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
-<script src="logic.js?v=13"></script>
-<script src="stickers.js?v=13"></script>
+<script src="logic.js?v=14"></script>
+<script src="stickers.js?v=14"></script>
 <script>
-const APP_VER = '13';
+const APP_VER = '14';
 (function checkVersion() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.text() : '')).then(v => {
     v = v.trim();
@@ -377,7 +428,7 @@ const CH = { r: { K: '帥', A: '仕', E: '相', R: '俥', H: '傌', C: '炮', P:
 const T = {
   zh: {
     rules: '規則', intro: '跟朋友線上下暗棋，不用註冊：開一局，把連結傳給對方。',
-    create: '建立線上對局', local: '同一台裝置對下', newGame: '重新開局', share: '把這個連結傳給朋友：',
+    create: '建立私人房間', local: '同一台裝置對下', newGame: '重新開局', share: '把這個連結傳給朋友：',
     copy: '複製', copied: '已複製連結', send: '送出', again: '再來一局', close: '關閉',
     chatPh: '打個招呼…', red: '紅方', black: '黑方', you: '你', friend: '朋友', p1: '玩家一', p2: '玩家二',
     yourTurn: '輪到你', theirTurn: '輪到朋友', firstFlip: '點一顆棋翻開，翻到的顏色就是你的。',
@@ -414,9 +465,10 @@ const $ = id => document.getElementById(id);
 let mode = null;      // 'host' | 'guest' | 'local'
 let room = null;
 let state = null, prev = null, sel = null, peer = null, conn = null, retryTimer = null, shownOver = '';
-const me = () => (mode === 'local' ? state.turn : mode);
+const me = () => (mode === 'local' ? state.turn : mode === 'watch' ? 'host' : mode);   // spectators see the board from the host's side
 const portraitMQ = matchMedia('(max-width: 600px) and (orientation: portrait)');
-const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let reduced = store.get('bq-anim') === 'off';
+document.body.classList.toggle('calm', reduced);
 
 function toast(msg, ms = 1900) { const el = $('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), ms); }
 const colName = c => (c === 'r' ? t('red') : t('black'));
@@ -522,6 +574,12 @@ function soundIcon() {
     ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg>'
     : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
 }
+$('animBtn').classList.toggle('off', reduced);
+$('animBtn').onclick = () => {
+  reduced = !reduced; store.set('bq-anim', reduced ? 'off' : 'on');
+  document.body.classList.toggle('calm', reduced); $('animBtn').classList.toggle('off', reduced);
+  toast(reduced ? '動畫效果已關閉' : '動畫效果已開啟');
+};
 $('soundBtn').onclick = () => { muted = !muted; store.set('bq-mute', muted ? '1' : '0'); soundIcon(); if (!muted) knock(); };
 
 // ---------- piece markup ----------
@@ -553,14 +611,16 @@ function fitBoard(force) {
   fitBoard.key = key;
   const cols = portrait ? 4 : 8, rows = portrait ? 8 : 4;
   const pad = portrait ? 14 + 12 : 24 + 16;
-  const availW = Math.min(document.querySelector('main').clientWidth, 900) - pad;
-  const availH = innerHeight - (portrait ? 230 : 288);   // header + players + status + bottom row
-  const cell = Math.max(38, Math.floor(Math.min(availW / cols, portrait ? availH / rows : 110)));
+  const colW = document.querySelector('.col-main').clientWidth || document.querySelector('main').clientWidth;
+  const availW = Math.min(colW, 980) - pad;
+  const availH = innerHeight - (portrait ? 230 : 330);   // header + players + status + bottom row
+  const cell = Math.max(38, Math.floor(Math.min(availW / cols, portrait ? availH / rows : Math.min(110, availH / rows))));
   $('board').style.setProperty('--cell', cell + 'px');
   $('board').classList.toggle('portrait', portrait);
 }
-let lastW = innerWidth;
-addEventListener('resize', () => { if (state && innerWidth !== lastW) { lastW = innerWidth; fitBoard(true); } });
+let lastW = innerWidth, lastH = innerHeight;
+// phones fire resize when the address bar slides, so only width counts there; on wide screens height counts too
+addEventListener('resize', () => { if (state && (innerWidth !== lastW || (!portraitMQ.matches && innerHeight !== lastH))) { lastW = innerWidth; lastH = innerHeight; fitBoard(true); } });
 portraitMQ.addEventListener('change', () => { if (state) { fitBoard(true); render(false); } });
 
 // ---------- rendering ----------
@@ -568,7 +628,7 @@ function render(animate = true) {
   fitBoard();
   capDelay = animate && !reduced && prev && state.last && state.last.cap && state.moveNo === prev.moveNo + 1 && state.board[state.last.to]
     ? CAP[state.board[state.last.to].t].impact + 600 : 0;
-  const board = $('board'), myRole = me(), myTurn = state.turn === myRole && !state.winner;
+  const board = $('board'), myRole = me(), myTurn = state.turn === myRole && !state.winner && mode !== 'watch';
   const myCol = state.colors && state.colors[myRole];
   const tg = sel != null ? B.targets(state.board, sel) : [];
   const last = state.last || {};
@@ -811,9 +871,9 @@ function effects(p, s) {
       sfx.sparkle();
       if (pc.t === 'K') { banner(`${CH[pc.c].K} 現身！`, '', pc.c); flash('rgba(255,200,90,.6)'); shake(4); sfx.gong(); }
       else if (!p.colors && s.colors) {
-        const who = mode === 'local' ? (mover === 'host' ? t('p1') : t('p2')) : t('you');
-        const col = s.colors[mode === 'local' ? mover : mode];
-        banner(`${who}執${colName(col)}`, mode === 'local' ? '' : `${oppName()}是${colName(col === 'r' ? 'b' : 'r')}`, col);
+        const who = mode === 'local' ? (mover === 'host' ? t('p1') : t('p2')) : mode === 'watch' ? playerName(mover) : t('you');
+        const col = s.colors[mode === 'local' || mode === 'watch' ? mover : mode];
+        banner(`${esc(who)}執${colName(col)}`, mode === 'local' || mode === 'watch' ? '' : `${oppName()}是${colName(col === 'r' ? 'b' : 'r')}`, col);
       }
     }, 260);
     return;
@@ -852,7 +912,7 @@ function playSound(p) {
 
 function renderPlayers() {
   const local = mode === 'local';
-  const meRole = local ? 'host' : mode, oppRole = B.other(meRole);
+  const meRole = local || mode === 'watch' ? 'host' : mode, oppRole = B.other(meRole);
   const fill = (el, role, name, avId) => {
     const col = state.colors && state.colors[role];
     const av = el.querySelector('.av');
@@ -871,6 +931,13 @@ function renderPlayers() {
     }
     el.classList.toggle('turn', !state.winner && state.turn === role);
   };
+  if (mode === 'watch') {
+    const w = watchInfo || {};
+    fill($('pMe'), 'host', playerName('host'), (w.h && w.h.a) || 'n-8');
+    fill($('pOpp'), 'guest', playerName('guest'), (w.g && w.g.a) || 'm-smug');
+    $('pMe').classList.remove('editable');
+    return;
+  }
   fill($('pMe'), meRole, local ? t('p1') : myName(), local ? 'n-8' : profile.av);
   fill($('pOpp'), oppRole, local ? t('p2') : oppName(), local ? 'n-17' : (oppProfile && oppProfile.av) || 'm-smug');
   $('pMe').classList.toggle('editable', !local);
@@ -881,8 +948,11 @@ function renderStatus() {
   if (state.winner) {
     if (state.winner === 'draw') s = `<b>${t('draw')}</b>`;
     else if (mode === 'local') s = `<b>${t('winOf')(colName(state.colors[state.winner]))}</b>`;
+    else if (mode === 'watch') s = `<b>${esc(playerName(state.winner))}獲勝！</b>`;
     else s = `<b>${state.winner === mode ? t('win') : t('lose')}</b>`;
     s += ' ' + esc(reasonText());   // contains the friend's name
+  } else if (mode === 'watch') {
+    s = `👀 觀戰中・<b>輪到${esc(playerName(state.turn))}</b>`;
   } else if (mode === 'local') {
     s = state.colors ? `<b>${t('turnOf')(colName(state.colors[state.turn]))}</b>` : t('firstLocal');
   } else {
@@ -898,11 +968,12 @@ function showOver() {
   let title;
   if (state.winner === 'draw') title = t('draw');
   else if (mode === 'local') title = t('winOf')(colName(state.colors[state.winner]));
+  else if (mode === 'watch') title = playerName(state.winner) + '獲勝！';
   else title = state.winner === mode ? t('win') : t('lose');
   $('ovTitle').textContent = title;
   $('ovReason').textContent = reasonText();
   $('overlay').classList.remove('hidden');
-  const won = state.winner !== 'draw' && (mode === 'local' || state.winner === mode);
+  const won = state.winner !== 'draw' && (mode === 'local' || mode === 'watch' || state.winner === mode);
   const st = $('ovStamp');
   st.textContent = state.winner === 'draw' ? '和' : won ? '勝' : '敗';
   st.className = 'stamp' + (state.winner === 'draw' ? ' draw' : won ? '' : ' lose');
@@ -932,6 +1003,7 @@ $('ovAgain').onclick = () => { hideOver(); newGame(true); };
 
 // ---------- input ----------
 $('board').addEventListener('click', e => {
+  if (mode === 'watch') return;
   ac();
   const cell = e.target.closest('.cell');
   if (!cell || !state || state.winner) return;
@@ -958,7 +1030,7 @@ function setState(s, animate = true) {
   state = s;
   if (mode !== 'guest') store.set(storeKey(), JSON.stringify(state));
   render(animate);
-  if (mode === 'host') sendState();
+  if (mode === 'host') { sendState(); pubWatch(); }
 }
 const storeKey = () => (mode === 'local' ? 'bq-local' : 'bq-room-' + room);
 
@@ -1026,8 +1098,11 @@ function keepCustom(u) {
   if (!$('tray').classList.contains('hidden')) renderTray();
 }
 const stkArt = x => x.svg || `<img src="${x.img}" alt="${x.name}" draggable="false" loading="lazy">`;
-let trayGroup = 'meme';
-const TENOR_GROUPS = ['cat', 'nailong', 'cry', 'shock', 'clap', 'speechless'];
+let trayGroup = 'nailong';
+// a few broad tabs (animated ones first); each tab shows several sticker groups
+const TAB_GROUPS = { nailong: ['nailong'], hot: ['hot'], cats: ['cat', 'cry', 'shock'], react: ['lol', 'wtf', 'smug', 'speechless', 'clap'], meme: ['orig', 'meme'], qibao: ['qibao'], mine: [] };
+const tabStickers = tab => (TAB_GROUPS[tab] || []).flatMap(g => STICKERS.filter(x => x.group === g));
+const TENOR_GROUPS = ['cat', 'nailong', 'cry', 'shock', 'clap', 'speechless', 'hot', 'lol', 'wtf', 'smug', 'orig'];
 // Turn what people paste into an image address we can show: media links as-is, a Giphy page into its media file.
 function toImageLink(raw) {
   const v = String(raw || '').trim();
@@ -1048,16 +1123,24 @@ $('linkForm').onsubmit = e => {
 };
 function renderTray() {
   document.querySelectorAll('#trayTabs button').forEach(b => b.classList.toggle('on', b.dataset.g === trayGroup));
-  $('tenorCredit').classList.toggle('hidden', !TENOR_GROUPS.includes(trayGroup));
+  $('tenorCredit').classList.toggle('hidden', !(TAB_GROUPS[trayGroup] || []).some(g => TENOR_GROUPS.includes(g)));
   $('linkForm').classList.toggle('hidden', trayGroup !== 'mine');
   $('linkHint').classList.toggle('hidden', trayGroup !== 'mine');
   $('trayGrid').innerHTML = trayGroup === 'mine'
     ? '<button type="button" class="stk add" data-add="1" title="加入自己的貼圖">＋</button>' +
       customs.map((u, k) => `<div class="stk" data-c="${k}"><img src="${u}" alt=""><span class="del" data-del="${k}">×</span></div>`).join('')
-    : STICKERS.filter(x => x.group === trayGroup).map(x => `<div class="stk" data-id="${x.id}" title="${x.name}">${stkArt(x)}</div>`).join('');
+    : tabStickers(trayGroup).map(x => `<div class="stk" data-id="${x.id}" title="${x.name}">${stkArt(x)}</div>`).join('');
 }
 $('trayTabs').onclick = e => { const b = e.target.closest('button'); if (b) { trayGroup = b.dataset.g; renderTray(); } };
-$('trayBtn').onclick = () => { const tr = $('tray'); tr.classList.toggle('hidden'); if (!tr.classList.contains('hidden')) { renderTray(); tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } };
+// 貼圖 and 嘲諷 are tabs: opening one closes the other; pressing the open one closes it
+function openPanel(which) {
+  const open = which && $(which).classList.contains('hidden') ? which : null;
+  ['tray', 'tauntPanel'].forEach(id => $(id).classList.toggle('hidden', id !== open));
+  $('trayBtn').classList.toggle('on', open === 'tray'); $('tauntBtn').classList.toggle('on', open === 'tauntPanel');
+  if (open === 'tray') renderTray();
+  if (open) $(open).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+$('trayBtn').onclick = () => openPanel('tray');
 $('trayGrid').onclick = e => {
   if (e.target.closest('[data-add]')) { $('stickerFile').click(); return; }
   const del = e.target.closest('[data-del]');
@@ -1101,9 +1184,9 @@ function shrinkImage(file) {
 }
 function showSticker(m, mine) {
   let html;
-  if (m.sid) { const x = STICKERS.find(k => k.id === m.sid); if (!x) return; html = stkArt(x); }
-  else if (typeof m.img === 'string' && m.img.length < 100000 && IMG_RE.test(m.img)) { html = `<img src="${m.img}" alt="">`; if (!mine) keepCustom(m.img); }
-  else if (typeof m.url === 'string' && LINK_RE.test(m.url)) { html = `<img src="${m.url}" alt="">`; if (!mine) keepCustom(m.url); }
+  if (m.sid) { const x = STICKERS.find(k => k.id === m.sid); if (!x) return; html = stkArt(x); if (!/^https:/.test(x.img || '')) html = html.replace(/^<(img|svg)/, '<$1 class="wiggle"'); }
+  else if (typeof m.img === 'string' && m.img.length < 100000 && IMG_RE.test(m.img)) { html = `<img class="wiggle" src="${m.img}" alt="">`; if (!mine && mode !== 'watch') keepCustom(m.img); }
+  else if (typeof m.url === 'string' && LINK_RE.test(m.url)) { html = `<img src="${m.url}" alt="">`; if (!mine && mode !== 'watch') keepCustom(m.url); }
   else return;
   sfx.boing();
   // A speech bubble right next to the sender's avatar (mine on the left card, the friend's on the right),
@@ -1153,6 +1236,7 @@ function takeProfile(pf) {
   oppProfile = { name, av };
   if (first && name) toast(name + ' 加入了');
   if (state) { renderPlayers(); renderStatus(); }
+  if (mode === 'host') { pubWatch(); pubLobby(); }
 }
 function openProfile() {
   $('profName').value = profile.name;
@@ -1165,6 +1249,7 @@ function openProfile() {
     store.set('bq-profile', JSON.stringify(profile));
     $('prof').classList.add('hidden');
     send({ type: 'profile', pf: myPf() });
+    if (mode === 'host') { pubWatch(); pubLobby(); }
     if (state) { renderPlayers(); renderStatus(); }
   };
   $('prof').classList.remove('hidden');
@@ -1186,7 +1271,7 @@ function ask(text, yes, no) {
 function reasonText() {
   if (state.reason !== 'resign') return t('reason')[state.reason] || '';
   const r = state.resigned;
-  return (mode === 'local' ? (r === 'host' ? t('p1') : t('p2')) : r === mode ? t('you') : oppName()) + '認輸了。';
+  return (mode === 'local' ? (r === 'host' ? t('p1') : t('p2')) : mode === 'watch' ? playerName(r) : r === mode ? t('you') : oppName()) + '認輸了。';
 }
 function doResign(role) {
   const r = B.resign(state, role);
@@ -1225,6 +1310,7 @@ function doUndo(role) {   // host / local only
   return true;
 }
 function updateButtons() {
+  $('gameBtns').classList.toggle('hidden', mode === 'watch');
   const has = !!state && mode !== null;
   $('undoBtn').disabled = !has || !!undoPending || !(mode === 'local' ? state.moveNo > 0 && !state.winner && undoHist.length : canUndo(mode));
   $('resignBtn').disabled = !has || !!state.winner;
@@ -1303,7 +1389,7 @@ const TAUNTS = ['就這？', '你在想什麼', '謝謝招待', '我等到睡著
 const BOARD = [['😂 罐頭笑聲', 'laugh'], ['🎺 悲傷長號', 'trombone'], ['🥁 蹦蹦嚓', 'rimshot'], ['🦟 蚊子嗡嗡', 'mosquito']];
 $('tauntChips').innerHTML = TAUNTS.slice(0, 10).map((x, k) => `<button type="button" data-k="${k}">${x}</button>`).join('');
 $('boardChips').innerHTML = BOARD.map(([label], k) => `<button type="button" data-b="${k}">${label}</button>`).join('');
-$('tauntBtn').onclick = () => { const tp = $('tauntPanel'); tp.classList.toggle('hidden'); if (!tp.classList.contains('hidden')) tp.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
+$('tauntBtn').onclick = () => openPanel('tauntPanel');
 let lastTaunt = 0;
 function okToSend() {
   if (!online()) { toast(t('waiting')); return false; }
@@ -1323,6 +1409,26 @@ addEventListener('pointerdown', function unlock() {
   removeEventListener('pointerdown', unlock);
   try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch (_) {}
 }, { once: true });
+// Taunt voices are pre-recorded clips (voice/tNN.mp3, OpenAI gpt-4o-mini-tts, voice verse), played through Web Audio
+// so phones don't block them; the browser's own speech is only a fallback.
+const voiceBuf = {};
+async function loadVoice(k) {
+  if (voiceBuf[k]) return voiceBuf[k];
+  const a = ac(); if (!a) return null;
+  const r = await fetch(`voice/t${String(k).padStart(2, '0')}.mp3?v=${APP_VER}`);
+  voiceBuf[k] = await a.decodeAudioData(await r.arrayBuffer());
+  return voiceBuf[k];
+}
+async function playVoice(k) {
+  if (muted) return;
+  try {
+    const b = await loadVoice(k), a = ac();
+    if (!b || !a) throw 0;
+    const src = a.createBufferSource(), g = a.createGain();
+    src.buffer = b; g.gain.value = .95;
+    src.connect(g).connect(a.destination); src.start();
+  } catch (_) { speak(TAUNTS[k]); }
+}
 function speak(text) {
   if (muted || !('speechSynthesis' in window)) return;
   try {
@@ -1333,12 +1439,12 @@ function speak(text) {
   } catch (_) {}
 }
 // a speech bubble next to the sender's avatar
-function say(text, mine) {
+function say(text, mine, chat) {
   const who = $(mine ? 'pMe' : 'pOpp');
   document.querySelectorAll('.say.' + (mine ? 'me' : 'opp')).forEach(x => x.remove());
   const c = who.getBoundingClientRect(), av = who.querySelector('.av').getBoundingClientRect(), boardTop = wrapEl().getBoundingClientRect().top;
   const d = document.createElement('div');
-  d.className = 'say ' + (mine ? 'me' : 'opp');
+  d.className = 'say ' + (mine ? 'me' : 'opp') + (chat ? ' chat' : '');
   d.textContent = text;
   document.body.appendChild(d);
   const w = d.offsetWidth, h = d.offsetHeight, onScreen = c.bottom > 20 && c.top < innerHeight - 100;
@@ -1347,12 +1453,12 @@ function say(text, mine) {
   Object.assign(d.style, { left: x + 'px', top: y + 'px', transformOrigin: mine ? '0% 50%' : '100% 50%' });
   if (reduced) { setTimeout(() => d.remove(), 2400); return; }
   d.animate([{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1.15)', opacity: 1, offset: .1 }, { transform: 'scale(1)', opacity: 1, offset: .18 },
-    { transform: 'scale(1)', opacity: 1, offset: .85 }, { transform: 'translateY(-16px)', opacity: 0 }], { duration: 2600, easing: 'ease-out' }).onfinish = () => d.remove();
+    { transform: 'scale(1)', opacity: 1, offset: .85 }, { transform: 'translateY(-16px)', opacity: 0 }], { duration: chat ? Math.min(7000, 2600 + text.length * 120) : 2600, easing: 'ease-out' }).onfinish = () => d.remove();
 }
 function sayTaunt(k, mine) {
   if (!Number.isInteger(k) || !TAUNTS[k]) return;
   say(TAUNTS[k], mine);
-  speak(TAUNTS[k]);
+  playVoice(k);
 }
 function playBoard(k, mine) {
   if (!Number.isInteger(k) || !BOARD[k]) return;
@@ -1366,7 +1472,7 @@ function trackTurn() {
   const key = state ? state.gid + ':' + state.moveNo + ':' + state.turn : '';
   if (key !== lastTurnKey) { lastTurnKey = key; turnStart = Date.now(); updateThink(); }
 }
-const oppThinking = () => !!state && mode !== 'local' && !state.winner && state.turn !== mode;
+const oppThinking = () => !!state && (mode === 'host' || mode === 'guest') && !state.winner && state.turn !== mode;
 function updateThink() {
   const sec = Math.floor((Date.now() - turnStart) / 1000), bucket = oppThinking() && sec >= 10 ? Math.floor(sec / 5) * 5 : 0;
   let el = $('pOpp').querySelector('.think');
@@ -1377,7 +1483,7 @@ function updateThink() {
     if (el.textContent !== txt) el.textContent = txt;
   }
   const can = oppThinking() && sec >= 15 && Date.now() - lastHurry > 10000;
-  $('hurryBtn').classList.toggle('hidden', mode === 'local' || !mode);
+  $('hurryBtn').classList.toggle('hidden', mode !== 'host' && mode !== 'guest');
   if ($('hurryBtn').disabled !== !can) $('hurryBtn').disabled = !can;
 }
 setInterval(() => { if (state) updateThink(); }, 1000);
@@ -1391,7 +1497,7 @@ $('hurryBtn').onclick = () => {
 function getHurried() {
   sfx.ding();
   say('快點啦！', false);
-  speak('快點啦');
+  playVoice(11);
   try { navigator.vibrate && navigator.vibrate([120, 60, 120]); } catch (_) {}
   if (reduced) return;
   shake(8);
@@ -1448,18 +1554,31 @@ function offerFollowUp(victim, cannon, combo) {
 $('quick').onclick = e => { const b = e.target.closest('[data-k]'); if (b) { sendTaunt(+b.dataset.k); $('quick').classList.add('hidden'); } };
 
 // ---------- chat ----------
-function addChat(who, text) {
+function addChat(who, text, pub, name, side) {   // side: 'me' | 'opp' shows it as a bubble by that avatar
   const d = document.createElement('div');
-  d.className = 'msg' + (who === 'me' ? ' me' : '');
-  d.textContent = text;
+  d.className = 'msg' + (who === 'me' ? ' me' : '') + (pub ? ' pub' : '');
+  if (pub || lvl === 'chat') {
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.textContent = pub ? '📢 ' + (name || '') : '🔒 私人';
+    d.appendChild(tag);
+  }
+  d.appendChild(document.createTextNode(text));
   $('chatLog').appendChild(d); $('chatLog').scrollTop = 1e9;
-  if (who !== 'me') { toast('💬 ' + text, 3500); knock(3000, .03, .2); knock(3400, .03, .2, .08); }
+  if (side) say(text, side === 'me', true);
+  if (who !== 'me') { if (!side) toast('💬 ' + (pub && name ? name + '：' : '') + text, 3500); knock(3000, .03, .2); knock(3400, .03, .2, .08); }
 }
 $('chatForm').onsubmit = e => {
   e.preventDefault();
-  const v = $('chatInput').value.trim(); if (!v) return;
+  const v = $('chatInput').value.trim().slice(0, 200); if (!v) return;
+  if (mode === 'watch' || chan === 'pub') {
+    if (lvl !== 'chat' || !mq || !mq.connected) { toast('公開聊天沒有開放'); return; }
+    mq.publish(topic('pub'), JSON.stringify({ type: 'pub', id: rid(), w: myId, n: myName(), r: mode, text: v }), { qos: 1 });
+    addChat('me', v, true, myName(), mode === 'watch' ? null : 'me'); $('chatInput').value = '';
+    return;
+  }
   if (!online()) { toast(t('waiting')); return; }
-  send({ type: 'chat', text: v }); addChat('me', v); $('chatInput').value = '';
+  send({ type: 'chat', text: v }); addChat('me', v, false, '', 'me'); $('chatInput').value = '';
 };
 
 // ---------- networking ----------
@@ -1487,6 +1606,9 @@ const deadGids = new Set();
 const syncReq = type => send({ type, gid: state ? state.gid : null, seq: state ? state.seq : -1 });
 function send(msg) {
   msg.id = rid();
+  if (mode === 'guest') msg.from = myId;
+  if (mode === 'host' && msg.type === 'ping') { msg.lvl = cfg.watch; msg.aud = audN; }
+  if (mode === 'host' && FWD.includes(msg.type)) pubWatchEv('host', msg);
   if (mode !== 'local' && (msg.type === 'ping' || msg.type === 'hello' || msg.type === 'profile')) msg.pf = myPf();
   if (conn && conn.open) { try { conn.send(msg); } catch (_) {} }
   if (mq && mq.connected) mq.publish(topic(mode === 'host' ? 'guest' : 'host'), JSON.stringify(msg), { qos: 1 });
@@ -1503,6 +1625,8 @@ let everJoined = false;
 function updateConn() {
   if (mode === 'local' || !mode) return;
   const now = Date.now(), via = now - heard.p2p < 12000 ? '（直連）' : now - heard.relay < 12000 ? '（中繼）' : '';
+  if (mode === 'watch') { setConn(watchInfo ? '👀 觀戰中' : watchOff ? '房主沒有開放觀戰' : '連線中…', watchInfo ? 'on' : 'wait'); return; }
+  if (mode === 'host' && pubLobby.st !== (online() ? 'play' : 'wait')) pubLobby();
   if (online()) setConn(t('connected') + via, 'on');
   else if (mode === 'host') setConn(t('waiting'), 'wait');
   else if (gotState) setConn(t('disconnected'), 'wait');
@@ -1513,6 +1637,11 @@ function receive(m, ch) {
   if (ch) heard[ch] = Date.now();
   if (!m || typeof m !== 'object' || !m.id || seen.has(m.id)) return;
   seen.add(m.id);
+  if (mode === 'host' && m.from && !acceptGuest(m.from)) { send({ type: 'full', to: m.from }); return; }
+  if (mode === 'guest' && m.type === 'full') { if (m.to === myId) roomFull(); return; }
+  if (mode === 'guest' && m.lvl) { if (lvl !== m.lvl) { lvl = m.lvl; updateAudInfo(); } }
+  if (mode === 'guest' && typeof m.aud === 'number' && m.aud !== audN) { audN = m.aud; updateAudInfo(); }
+  if (mode === 'host' && FWD.includes(m.type)) pubWatchEv('guest', m);
   const wasOnline = online();
   lastHeard = Date.now();
   if (!wasOnline) updateConn();
@@ -1526,7 +1655,7 @@ function receive(m, ch) {
     else if (m.type === 'resign') { if (m.gid === state.gid) doResign('guest'); }
     else if (m.type === 'undoReq') onUndoRequest(m);
     else if (m.type === 'undoAns') onUndoAnswer(m);
-    else if (m.type === 'chat') addChat('friend', String(m.text).slice(0, 200));
+    else if (m.type === 'chat') addChat('friend', String(m.text).slice(0, 200), false, '', 'opp');
     else if (m.type === 'react') floatEmoji(m.e, false);
     else if (m.type === 'sticker') showSticker(m, false);
     else if (m.type === 'taunt') sayTaunt(m.k, false);
@@ -1546,7 +1675,7 @@ function receive(m, ch) {
       if (state.moveNo === 0) hideOver();
       if (undoPending && state.moveNo !== undoPending) undoPending = 0;
       render(!first);
-    } else if (m.type === 'chat') addChat('friend', String(m.text).slice(0, 200));
+    } else if (m.type === 'chat') addChat('friend', String(m.text).slice(0, 200), false, '', 'opp');
     else if (m.type === 'react') floatEmoji(m.e, false);
     else if (m.type === 'sticker') showSticker(m, false);
     else if (m.type === 'undoReq') onUndoRequest(m);
@@ -1562,14 +1691,26 @@ function receive(m, ch) {
 function startRelay(k = 0) {
   if (onlyP2P || typeof mqtt === 'undefined') return;
   const url = BROKERS[k % BROKERS.length];
-  const c = mqtt.connect(url, { clientId: 'bq-' + rid(), clean: true, connectTimeout: 7000, reconnectPeriod: 0, keepalive: 30 });
+  const opts = { clientId: 'bq-' + rid(), clean: true, connectTimeout: 7000, reconnectPeriod: 0, keepalive: 30 };
+  if (mode === 'host') opts.will = { topic: lobbyTopic(room), payload: '', retain: true, qos: 1 };   // broker removes our lobby card if we vanish
+  const c = mqtt.connect(url, opts);
   let ok = false;
   c.on('connect', () => {
     ok = true; mq = c;
-    c.subscribe(topic(mode), { qos: 1 });
+    if (mode === 'watch') c.subscribe([topic('watch'), topic('pub')], { qos: 1 });
+    else c.subscribe([topic(mode), topic('pub')].concat(mode === 'host' ? [topic('aud')] : []), { qos: 1 });
     if (mode === 'guest') syncReq('hello');
+    if (mode === 'host') { pubWatch.on = true; pubWatch(); pubLobby(true); }
+    if (mode === 'watch') audPing();
   });
-  c.on('message', (_, payload) => { try { receive(JSON.parse(payload.toString()), 'relay'); } catch (_) {} });
+  c.on('message', (tp, payload) => {
+    const raw = payload.toString();
+    if (tp.endsWith('/watch')) { if (!raw) onWatch(null); else try { onWatch(JSON.parse(raw)); } catch (_) {} return; }
+    let m; try { m = JSON.parse(raw); } catch (_) { return; }
+    if (tp.endsWith('/aud')) onAud(m);
+    else if (tp.endsWith('/pub')) onPub(m);
+    else receive(m, 'relay');
+  });
   const retry = () => { if (mq === c) mq = null; c.end(true); setTimeout(() => startRelay(ok ? k : k + 1), ok ? 1500 : 500); };
   c.on('close', () => { if (!c._retried) { c._retried = true; retry(); } });
   c.on('error', () => {});
@@ -1581,8 +1722,10 @@ function startP2P() {
   if (mode === 'host') {
     peer = new Peer(hostId(), PEER_OPTS);
     peer.on('connection', c => {
-      c.on('open', () => { conn = c; sendState(); });
-      c.on('data', m => receive(m, 'p2p'));
+      c.on('data', m => {
+        if (m && m.from && !acceptGuest(m.from)) { try { c.send({ type: 'full', to: m.from, id: rid() }); } catch (_) {} setTimeout(() => c.close(), 300); return; }
+        conn = c; receive(m, 'p2p');
+      });
       c.on('close', () => { if (conn === c) conn = null; });
     });
     peer.on('error', err => { if (err.type === 'unavailable-id') { peer.destroy(); setTimeout(startP2P, 4000); } }); // old tab still holds the id after a reload
@@ -1602,6 +1745,7 @@ function connectToHost() {
 function scheduleRetry() { clearTimeout(retryTimer); retryTimer = setTimeout(() => { if (peer && !peer.destroyed && peer.open && !(conn && conn.open)) connectToHost(); }, 5000); }
 
 function startNet() {
+  setTimeout(() => TAUNTS.forEach((_, k) => loadVoice(k).catch(() => {})), 6000);
   setTimeout(() => STICKERS.forEach(x => { if (x.group === 'meme') new Image().src = x.img; }), 2500);
   setTimeout(() => PARTY_CATS.forEach(id => { const x = STICKERS.find(k => k.id === id); if (x) new Image().src = x.img; }), 8000);
   startP2P();
@@ -1610,6 +1754,10 @@ function startNet() {
   timers.push(setInterval(() => {
     if (mode === 'guest') syncReq(gotState ? 'ping' : 'hello'); else send({ type: 'ping' });
   }, 4000));
+  if (mode === 'host') {
+    timers.push(setInterval(() => pubLobby(true), 30000));
+    timers.push(setInterval(countAud, 5000));
+  }
   timers.push(setInterval(updateConn, 2000));
 }
 document.addEventListener('visibilitychange', () => {
@@ -1619,9 +1767,216 @@ document.addEventListener('visibilitychange', () => {
 });
 addEventListener('pageshow', () => { if (mode === 'guest') syncReq('hello'); });
 
+// ---------- rooms: lobby listing, spectators, public chat ----------
+const LVL_NAME = { off: '不開放', board: '只看棋盤', fun: '棋盤＋貼圖嘲諷', chat: '可公開聊天' };
+const FWD = ['sticker', 'taunt', 'board', 'react'];      // events spectators may see (level fun / chat)
+const lobbyTopic = r => `banqi-tw/v1/lobby/${r}`;
+let myId = store.get('bq-me');
+if (!myId || !/^[a-z0-9]{6,16}$/.test(myId)) { myId = Math.random().toString(36).slice(2, 12); store.set('bq-me', myId); }
+let cfg = { lobby: false, watch: 'off', guest: null, guestSeen: 0 };   // host only, per room
+let lvl = 'off', audN = 0, watchInfo = null, watchOff = false, chan = 'priv';
+const cfgKey = () => 'bq-cfg-' + room;
+function loadCfg() { try { Object.assign(cfg, JSON.parse(store.get(cfgKey())) || {}); } catch (_) {} if (!LVL_NAME[cfg.watch]) cfg.watch = 'off'; lvl = cfg.watch; }
+function saveCfg() { store.set(cfgKey(), JSON.stringify(cfg)); }
+const playerName = role => {
+  if (mode === 'watch') { const w = watchInfo || {}, x = role === 'host' ? w.h : w.g; return (x && x.n) || (role === 'host' ? '房主' : '對手'); }
+  return role === mode ? myName() : oppName();
+};
+// the first guest owns the seat; someone else may take it only after the seat has been silent for a minute
+function acceptGuest(from) {
+  const now = Date.now();
+  if (!cfg.guest || cfg.guest === from || now - (cfg.guestSeen || 0) > 60000) {
+    if (cfg.guest !== from) { cfg.guest = from; saveCfg(); }
+    if (now - (cfg.guestSeen || 0) > 5000) { cfg.guestSeen = now; saveCfg(); } else cfg.guestSeen = now;
+    return true;
+  }
+  return false;
+}
+function roomFull() {
+  if (roomFull.done) return;
+  roomFull.done = true;
+  setConn('房間已滿', 'wait');
+  $('status').innerHTML = '這個房間已經有兩位玩家了。<a href="?room=' + room + '&watch=1" style="color:var(--gold)">改成觀戰</a>';
+}
+function pubRetained(tp, obj) { if (mq && mq.connected) mq.publish(tp, obj ? JSON.stringify(obj) : '', { qos: 1, retain: true }); }
+function pubWatch() {
+  if (mode !== 'host' || !state) return;
+  if (cfg.watch === 'off') { if (pubWatch.on) { pubRetained(topic('watch'), null); pubWatch.on = false; } return; }
+  pubWatch.on = true;
+  pubRetained(topic('watch'), { type: 'wstate', id: rid(), state: forGuest(state), h: myPf(), g: oppProfile ? { n: oppProfile.name, a: oppProfile.av } : null, lvl: cfg.watch, aud: audN });
+}
+function pubWatchEv(from, ev) {
+  if (mode !== 'host' || (cfg.watch !== 'fun' && cfg.watch !== 'chat') || !mq || !mq.connected) return;
+  const e = { type: ev.type, sid: ev.sid, img: ev.img, url: ev.url, k: ev.k, e: ev.e };
+  mq.publish(topic('watch'), JSON.stringify({ type: 'wev', id: rid(), from, ev: e }), { qos: 0 });
+}
+function pubLobby(force) {
+  if (mode !== 'host') return;
+  if (!cfg.lobby) { if (pubLobby.on || force) { pubRetained(lobbyTopic(room), null); pubLobby.on = false; } return; }
+  pubLobby.on = true;
+  pubLobby.st = online() ? 'play' : 'wait';
+  pubRetained(lobbyTopic(room), { room, n: profile.name, a: profile.av, st: pubLobby.st, lvl: cfg.watch, aud: audN, ts: Date.now() });
+}
+// audience: spectators say hello every 10 s; the host counts who was heard in the last 25 s
+const audSeen = {};
+function onAud(m) { if (mode === 'host' && m && typeof m.w === 'string') { audSeen[m.w.slice(0, 16)] = Date.now(); countAud(); } }
+function countAud() {
+  const now = Date.now(), n = Object.values(audSeen).filter(t0 => now - t0 < 25000).length;
+  if (n !== audN) { audN = n; updateAudInfo(); pubWatch(); pubLobby(); send({ type: 'ping' }); }
+}
+function audPing() { if (mode === 'watch' && mq && mq.connected) mq.publish(topic('aud'), JSON.stringify({ id: rid(), w: myId }), { qos: 0 }); }
+function updateAudInfo() {
+  let txt = '';
+  if (mode === 'host' || mode === 'guest') txt = lvl === 'off' ? '' : `觀戰：${LVL_NAME[lvl]}${audN ? '・👀 ' + audN : ''}`;
+  if (mode === 'watch' && watchInfo) txt = `👀 ${watchInfo.aud || 1} 人觀戰`;
+  if ($('audInfo').textContent !== txt) $('audInfo').textContent = txt;
+  const canPub = lvl === 'chat';
+  $('chanRow').classList.toggle('hidden', !(canPub && (mode === 'host' || mode === 'guest')));
+  if (!canPub && chan === 'pub') setChan('priv');
+  if (mode === 'watch') {
+    $('chatCard').classList.toggle('hidden', !canPub);
+    $('chatInput').placeholder = '公開聊天（玩家和觀眾都看得到）';
+  }
+}
+function setChan(c) {
+  chan = c;
+  document.querySelectorAll('#chanRow button').forEach(b => b.classList.toggle('on', b.dataset.ch === c));
+  $('chatInput').placeholder = c === 'pub' ? '公開聊天（觀眾也看得到）' : '私人訊息（只有你們兩個看得到）';
+}
+$('chanRow').onclick = e => { const b = e.target.closest('[data-ch]'); if (b) setChan(b.dataset.ch); };
+function onPub(m) {
+  if (!m || m.type !== 'pub' || typeof m.text !== 'string' || !m.id || seen.has(m.id) || m.w === myId) return;
+  seen.add(m.id);
+  if (lvl !== 'chat') return;
+  const player = m.r === 'host' || m.r === 'guest', who = player ? '' : '（觀眾）';
+  const side = !player ? null : mode === 'watch' ? (m.r === 'host' ? 'me' : 'opp') : 'opp';
+  addChat('them', m.text.slice(0, 200), true, cleanName(m.n) + who, side);
+}
+// spectator side
+function onWatch(m) {
+  if (mode !== 'watch') return;
+  if (!m) { watchInfo = null; watchOff = true; lvl = 'off'; updateConn(); updateAudInfo(); if (state) $('status').textContent = '房主關閉了觀戰'; else $('status').textContent = '房主沒有開放觀戰'; return; }
+  if (m.type === 'wstate') {
+    if (!validState(m.state) || !LVL_NAME[m.lvl]) return;
+    watchOff = false;
+    const clean = x => (x && typeof x === 'object' ? { n: cleanName(x.n), a: AVATARS.includes(x.a) ? x.a : null } : null);
+    watchInfo = { h: clean(m.h), g: clean(m.g), lvl: m.lvl, aud: typeof m.aud === 'number' ? m.aud : 0 };
+    lvl = m.lvl;
+    const s2 = m.state, first = !state;
+    if (first || s2.gid !== state.gid || s2.seq > state.seq) {
+      if (state && s2.gid !== state.gid) prev = null;
+      state = s2;
+      if (state.moveNo === 0) hideOver();
+      render(!first);
+    } else { renderPlayers(); renderStatus(); }
+    updateConn(); updateAudInfo();
+  } else if (m.type === 'wev' && watchInfo && (lvl === 'fun' || lvl === 'chat') && m.ev && m.id && !seen.has(m.id)) {
+    seen.add(m.id);
+    const mine = m.from === 'host', e = m.ev;      // host's things come out of the left card, the guest's out of the right
+    if (e.type === 'sticker') showSticker(e, mine);
+    else if (e.type === 'taunt') sayTaunt(e.k, mine);
+    else if (e.type === 'board') playBoard(e.k, mine);
+    else if (e.type === 'react') floatEmoji(e.e, mine);
+  }
+}
+function startWatch() {
+  startRelay();
+  updateConn();
+  timers.push(setInterval(audPing, 10000));
+  timers.push(setInterval(updateConn, 3000));
+  ['reacts', 'tauntPanel', 'tray', 'chanRow'].forEach(id => $(id).classList.add('hidden'));
+  $('chatCard').classList.add('hidden');
+  $('status').textContent = '連線中…';
+}
+// host settings
+function showRoomCfg() {
+  $('roomCfg').classList.toggle('hidden', mode !== 'host');
+  if (mode !== 'host') return;
+  $('cfgLobby').checked = !!cfg.lobby;
+  $('cfgWatch').value = cfg.watch;
+}
+$('cfgLobby').onchange = () => { cfg.lobby = $('cfgLobby').checked; saveCfg(); pubLobby(true); };
+$('cfgWatch').onchange = () => { cfg.watch = $('cfgWatch').value; lvl = cfg.watch; saveCfg(); pubWatch(); pubLobby(); updateAudInfo(); send({ type: 'ping' }); };
+$('watchLinkBtn').onclick = () => {
+  if (cfg.watch === 'off') { toast('先把觀戰打開'); return; }
+  const v = location.origin + location.pathname + '?room=' + room + '&watch=1';
+  (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(() => toast('已複製觀戰連結'), () => toast(v, 5000));
+};
+// lobby list on the home page
+let lobbyClient = null;
+const lobbyRooms = {};
+function startLobbyView(k = 0) {
+  if (typeof mqtt === 'undefined' || mode) return;
+  const c = mqtt.connect(BROKERS[k % BROKERS.length], { clientId: 'bq-l-' + rid(), clean: true, connectTimeout: 7000, reconnectPeriod: 0, keepalive: 30 });
+  lobbyClient = c;
+  let ok = false;
+  c.on('connect', () => { ok = true; c.subscribe('banqi-tw/v1/lobby/+', { qos: 1 }); renderRooms(); });
+  c.on('message', (tp, payload) => {
+    const r = tp.split('/').pop();
+    if (!/^[a-z0-9]{6}$/.test(r)) return;
+    const raw = payload.toString();
+    if (!raw) delete lobbyRooms[r];
+    else try { const m = JSON.parse(raw); if (m && m.room === r) lobbyRooms[r] = m; } catch (_) {}
+    renderRooms();
+  });
+  c.on('close', () => { if (lobbyClient === c && !mode) setTimeout(() => startLobbyView(ok ? k : k + 1), 1500); });
+  c.on('error', () => {});
+}
+function renderRooms() {
+  if (mode) return;
+  const now = Date.now();
+  const list = Object.values(lobbyRooms).filter(m => typeof m.ts === 'number' && now - m.ts < 180000).sort((a, b) => b.ts - a.ts);
+  const el = $('roomList');
+  if (!list.length) { el.className = 'muted'; el.style.textAlign = 'center'; el.textContent = lobbyClient && lobbyClient.connected ? '目前沒有公開房間，建立一個吧！' : '連線中…'; return; }
+  el.className = ''; el.style.textAlign = '';
+  el.innerHTML = list.map(m => {
+    const av = STICKERS.find(x => x.id === m.a && AVATARS.includes(m.a));
+    const lv = LVL_NAME[m.lvl] ? m.lvl : 'off';
+    const st = m.st === 'play' ? `對戰中${lv !== 'off' ? '・觀戰：' + LVL_NAME[lv] : ''}${m.aud ? '・👀 ' + (+m.aud || 0) : ''}` : '等待對手加入';
+    return `<div class="room"><div class="rav">${av ? stkArt(av) : ''}</div><div class="rinfo"><div class="rname">${esc(cleanName(m.n) || '玩家')}</div><div class="rst">${st}</div></div>` +
+      (m.st !== 'play' ? `<button class="primary" data-join="${m.room}">加入對戰</button>` : '') +
+      (lv !== 'off' ? `<button data-watch="${m.room}">觀戰</button>` : '') + '</div>';
+  }).join('');
+}
+setInterval(renderRooms, 10000);
+$('roomList').onclick = e => {
+  const j = e.target.closest('[data-join]'), w = e.target.closest('[data-watch]');
+  if (j) location.href = '?room=' + j.dataset.join;
+  else if (w) location.href = '?room=' + w.dataset.watch + '&watch=1';
+};
+
+// recent games: remember where I played (with my role, so a host can come back as host)
+const RECENT_KEY = 'bq-recent';
+function recentList() { try { return (JSON.parse(store.get(RECENT_KEY)) || []).filter(r => r && /^[a-z0-9]{6}$/.test(r.room) && /^\?room=[a-z0-9]{6}(&host=[a-z0-9]+|&watch=1)?$/.test(r.q)); } catch (_) { return []; } }
+function rememberGame() {
+  if (!room || mode === 'local') return;
+  const q = '?room=' + room + (mode === 'host' ? '&host=' + new URLSearchParams(location.search).get('host') : mode === 'watch' ? '&watch=1' : '');
+  const list = [{ room, q, role: mode, ts: Date.now() }, ...recentList().filter(r => r.room !== room)].slice(0, 5);
+  store.set(RECENT_KEY, JSON.stringify(list));
+}
+function renderRecent() {
+  const list = recentList().filter(r => Date.now() - r.ts < 7 * 864e5);
+  $('recent').classList.toggle('hidden', !list.length);
+  const label = { host: '我開的局', guest: '我加入的局', watch: '觀戰' };
+  $('recentList').innerHTML = list.map(r => `<div class="room"><div class="rinfo"><div class="rname">${label[r.role] || ''}・房號 ${r.room}</div><div class="rst">${new Date(r.ts).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div></div><button class="primary" data-q="${r.q}">繼續</button></div>`).join('');
+}
+$('recentList').onclick = e => { const b = e.target.closest('[data-q]'); if (b) location.href = location.pathname + b.dataset.q; };
+
+// back to the lobby (a player in a live online game is asked first; the game itself stays saved)
+async function goHome() {
+  if (!mode) return;
+  const live = state && !state.winner && state.moveNo > 0 && (mode === 'host' || mode === 'guest');
+  if (live && !await ask(mode === 'host' ? '回到大廳嗎？朋友會斷線，之後用原本的網址回來可以接著下。' : '回到大廳嗎？之後用同一個連結回來可以接著下。', '回大廳', '留下來')) return;
+  location.href = location.pathname;
+}
+$('homeBtn').onclick = goHome;
+$('brand').onclick = goHome;
+
 // ---------- startup ----------
 function enterGame() {
   $('lobby').classList.add('hidden'); $('game').classList.remove('hidden');
+  document.body.classList.add('ingame');
+  $('homeBtn').classList.remove('hidden');
   $('shareRow').classList.toggle('hidden', mode !== 'host');
   $('chatCard').classList.toggle('hidden', mode === 'local');
   $('conn').classList.toggle('hidden', mode === 'local');
@@ -1636,12 +1991,15 @@ function loadOrNew() {
   store.set(storeKey(), JSON.stringify(state));
 }
 
-$('createBtn').onclick = () => {
+function createRoom(pub) {
   ac();
   room = Math.random().toString(36).slice(2, 8);
+  store.set('bq-cfg-' + room, JSON.stringify({ lobby: pub, watch: pub ? 'fun' : 'off', guest: null, guestSeen: 0 }));
   history.replaceState(null, '', '?room=' + room + '&host=' + Math.random().toString(36).slice(2, 10));
   boot();
-};
+}
+$('createBtn').onclick = () => createRoom(false);
+$('createPubBtn').onclick = () => createRoom(true);
 $('localBtn').onclick = () => { ac(); history.replaceState(null, '', '?local=1'); boot(); };
 $('copyBtn').onclick = () => {
   const v = $('shareLink').value;
@@ -1656,10 +2014,17 @@ function boot() {
   const q = new URLSearchParams(location.search);
   room = q.get('room');
   if (q.get('local')) { mode = 'local'; loadOrNew(); }
-  else if (room && q.get('host')) { mode = 'host'; loadOrNew(); }
+  else if (room && !/^[a-z0-9]{6}$/.test(room)) { room = null; return; }
+  else if (room && q.get('host')) { mode = 'host'; loadOrNew(); loadCfg(); }
+  else if (room && q.get('watch')) { mode = 'watch'; state = null; }
   else if (room) { mode = 'guest'; state = null; }
-  else return;
+  else { renderRecent(); startLobbyView(); return; }
+  if (lobbyClient) { const c = lobbyClient; lobbyClient = null; c.end(true); }
   enterGame();
+  rememberGame();
+  showRoomCfg();
+  updateAudInfo();
+  if (mode === 'watch') { startWatch(); return; }
   if (mode !== 'local') { startNet(); if (!hadProfile && !profileShown) { profileShown = true; setTimeout(openProfile, 600); } }
   if (mode === 'guest') $('status').textContent = t('connecting');
   else { prev = null; render(false); if (state.moveNo === 0 && !reduced) deal(); }
