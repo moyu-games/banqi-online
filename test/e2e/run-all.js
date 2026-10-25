@@ -14,7 +14,7 @@ const LIVE = 'https://moyu-games.github.io/banqi-online';
 const SUITE = [
   ['flows.test.js'], ['instant-feedback.test.js'], ['attacks.test.js'], ['security.test.js'], ['bugfixes.test.js'],
   ['fair-shuffle.test.js'], ['spectate.test.js'], ['spectator-chat.test.js'], ['password.test.js'], ['block-lobby.test.js'],
-  ['same-browser.test.js'], ['social.test.js'], ['bubbles.test.js'], ['layout.test.js'], ['stale-host.test.js'],
+  ['same-browser.test.js'], ['lobby-idle.test.js'], ['social.test.js'], ['bubbles.test.js'], ['layout.test.js'], ['stale-host.test.js'],
   ['p2p.test.js', ['', 'both']], ['effects.test.js'], ['home.test.js'], ['perf.test.js', ['4']],
 ];
 const METRICS = [['load.test.js'], ['latency.test.js'], ['latency.test.js', ['&relay']]];

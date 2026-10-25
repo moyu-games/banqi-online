@@ -72,7 +72,7 @@ require('./lib').run(async ({ tab, until, check, setProfile, sleep, send, base, 
   await pubSignedA('banqi-tw/v1/lobby/zzfut1',{room:'zzfut1',n:'未來房間',st:'wait',lvl:'off',aud:0,lock:false,ts:Date.now()+864e5},true);
   await sleep(2500);
   check('lobby ignores unsigned cards and cards dated in the future', await L.ev("return !document.getElementById('roomList').textContent.includes('假房間')&&!document.getElementById('roomList').textContent.includes('未來房間')"));
-  await pubRaw('banqi-tw/v1/lobby/zzfake','',true); await A.ev("atk.publish('banqi-tw/v1/lobby/zzfut1','',{retain:true});return 1");
+  await A.ev("atk.publish('banqi-tw/v1/lobby/zzfake','',{retain:true});atk.publish('banqi-tw/v1/lobby/zzfut1','',{retain:true});return 1");   // truly empty = remove the retained card
   // 7. fair shuffle: a host that swaps its commitment after seeing the friend's seed
   await H.ev("document.getElementById('overlay').classList.add('hidden');resetGame();return 1");
   check('new game: joint shuffle', await until(G,"state.moveNo===0&&state.fair&&state.fair.gs&&mySeed.gid===state.gid&&mySeed.c===state.fair.c",15000));

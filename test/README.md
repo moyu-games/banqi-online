@@ -53,6 +53,7 @@ Screenshots, reports and the frame-timing JSON go to `test/e2e/out/`, which git 
 | `spectator-chat.test.js` | Every spectator level, public and private chat in every direction, the host badge, emoji bubbles |
 | `password.test.js` | Locked rooms: wrong and right passwords for guests and spectators, changing the password mid-game |
 | `block-lobby.test.js` | Blocking someone in public chat, public rooms start at board-only, the lobby summary |
+| `lobby-idle.test.js` | A waiting room leaves the lobby when its host goes idle or hides the tab, comes back on any input, and leaves at once when the tab closes |
 | `same-browser.test.js` | Host and guest as two tabs of one browser keep separate names, avatars and keys |
 | `social.test.js` | Stickers, emoji and taunts on one screen, sticker timing and tap-to-close, messages typed before the friend joins |
 | `bubbles.test.js` | Sticker, taunt and chat bubbles never cover a name or avatar, nor each other, on desktop and phone |

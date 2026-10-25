@@ -503,16 +503,16 @@
 <div id="quick" class="hidden"></div>
 <div id="prof" class="hidden"><div class="card"><h3>你的名字和頭像</h3><input id="profName" maxlength="12" placeholder="名字（最多 12 個字）" autocomplete="off"><p class="muted" style="font-size:12px;margin:-4px 0 10px">名字會顯示給對手、觀眾和大廳，建議用暱稱，不要用真實姓名。</p><div class="av-grid" id="avGrid"></div><div class="row" style="justify-content:flex-end"><button class="primary" id="profSave">好了</button></div></div></div>
 <div id="ask" class="hidden"><div class="card"><p id="askText"></p><input id="askInput" class="hidden" type="password" maxlength="20" autocomplete="off" style="width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin:-6px 0 14px"><div class="row"><button class="primary" id="askYes"></button><button id="askNo"></button></div></div></div>
-<div class="ver">版本 21</div>
+<div class="ver">版本 22</div>
 <div id="overlay" class="hidden"><div class="card"><div class="stamp" id="ovStamp"></div><h2 id="ovTitle"></h2><p id="ovReason"></p><p id="ovFair" class="muted fair-note"></p><div class="row"><button class="primary" id="ovAgain" data-t="again"></button><button id="ovClose" data-t="close"></button></div></div></div>
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js" integrity="sha384-u4uqeACkFcoKl57rBQJHVGDd1pqhW4w8X3WjTu1ZksPdxoLqdt34jpoNkJisE25W" crossorigin="anonymous"></script>
-<script src="logic.js?v=21"></script>
-<script src="stickers.js?v=21"></script>
+<script src="logic.js?v=22"></script>
+<script src="stickers.js?v=22"></script>
 <script>
-const APP_VER = '21';
+const APP_VER = '22';
 (function checkVersion() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.text() : '')).then(v => {
     v = v.trim();
@@ -2085,7 +2085,7 @@ function updateConn() {
   if (mode === 'host' && pubLobby.st !== (online() ? 'play' : 'wait')) pubLobby();
   if (mode === 'guest' && !online() && Date.now() - foreignAt < 20000) { setConn('房主的身分變了（可能換了瀏覽器或清除了資料），請向房主要新的邀請連結', 'wait'); return; }
   if (online()) setConn(t('connected') + via, 'on');
-  else if (mode === 'host') setConn(t('waiting'), 'wait');
+  else if (mode === 'host') setConn(pubLobby.idle ? t('waiting') + '（太久沒動靜，已從大廳隱藏；動一下就會重新公開）' : t('waiting'), 'wait');
   else if (gotState) setConn(t('disconnected'), 'wait');
   else setConn(now - startedAt > 10000 ? t('hostLeft') : t('connecting'), 'wait');
 }
@@ -2337,8 +2337,19 @@ function pubWatchEv(from, ev) {
   else return;
   pubSigned(watchTopic(), { type: 'wev', id: rid(), from, ev: e }, { qos: 0 });
 }
+// A waiting room whose host has wandered off leaves the lobby by itself: no input for 10 minutes, or the tab hidden
+// for 5. It comes back the moment the host does anything. A game in progress stays listed.
+let lastActive = Date.now(), hiddenSince = 0;
+const lobbyIdle = () => !online() && (Date.now() - lastActive > 600000 || (hiddenSince && Date.now() - hiddenSince > 300000));
+function hostActive() {
+  lastActive = Date.now();
+  if (mode === 'host' && pubLobby.idle) { pubLobby.idle = false; pubLobby(true); updateConn(); }
+}
+['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, hostActive, { passive: true }));
+document.addEventListener('visibilitychange', () => { if (document.hidden) hiddenSince = Date.now(); else { hiddenSince = 0; hostActive(); } });
 function pubLobby(force) {
   if (mode !== 'host') return;
+  if (cfg.lobby && lobbyIdle()) { if (!pubLobby.idle) { pubLobby.idle = true; pubRetained(lobbyTopic(room), null); pubLobby.on = false; updateConn(); } return; }
   if (!cfg.lobby) { if (pubLobby.on || force) { pubRetained(lobbyTopic(room), null); pubLobby.on = false; } return; }
   pubLobby.on = true;
   pubLobby.st = online() ? 'play' : 'wait';
@@ -2544,10 +2555,10 @@ function renderRecent() {
 $('recentList').onclick = e => { const b = e.target.closest('[data-q]'); if (b) location.href = location.pathname + b.dataset.q; };
 
 // Things kept on the public relay (spectator board, lobby card) are removed when the host leaves.
-function clearRelay() {
+function clearRelay() {   // synchronous on purpose: the page may be gone before a queued publish would run
   if (mode !== 'host' || !mq || !mq.connected) return;
-  if (pubWatch.on) pubRetained(watchTopic(), null);
-  pubRetained(lobbyTopic(room), null);
+  if (pubWatch.on) mq.publish(watchTopic(), '', { qos: 1, retain: true });
+  mq.publish(lobbyTopic(room), '', { qos: 1, retain: true });
 }
 addEventListener('pagehide', clearRelay);
 addEventListener('pageshow', e => { if (e.persisted && mode === 'host') { pubWatch.on = cfg.watch !== 'off'; pubWatch(); pubLobby(true); } });
