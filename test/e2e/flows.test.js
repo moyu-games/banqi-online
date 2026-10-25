@@ -207,7 +207,7 @@ let fails=0;const check=(name,ok,extra='')=>{console.log((ok?'PASS ':'FAIL ')+na
   await G.ev("document.querySelector('#boardChips [data-b=\"1\"]').click();return 1");
   check('sound board reaches the other side', await until(H,"[...document.querySelectorAll('.say.opp')].some(d=>d.textContent===BOARD[1][0])",8000));
   check('sound board plays the MyInstants clip', await H.ev("return boardPlayer.src===boardUrl(1)"));
-  check('sound board has 17 sounds (swear word removed)', await G.ev("return document.querySelectorAll('#boardChips button').length===17"));
+  check('sound board has 16 sounds (swear word and 館長 removed)', await G.ev("return document.querySelectorAll('#boardChips button').length===16&&!document.getElementById('boardChips').textContent.includes('館長')"));
   check('MyInstants clip is playable', await H.ev("return await new Promise(r=>{const a=new Audio(boardUrl(0));a.oncanplaythrough=()=>r(a.duration>0.3);a.onerror=()=>r(false);setTimeout(()=>r(false),8000)})"));
   if (await H.ev("return state.turn")!=='host') { await G.ev("const i=state.board.findIndex(p=>p&&!p.up);cells[i].click();return 1"); await until(H,"state.turn==='host'",8000); }
   await until(G,"state.turn==='host'",8000);

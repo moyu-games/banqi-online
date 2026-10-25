@@ -290,6 +290,7 @@
   .room .rname { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .room .rst { font-size: 12px; color: var(--muted); }
   .room button { padding: 6px 12px; font-size: 14px; }
+  .room .recent-x { padding: 6px 9px; background: none; border: none; box-shadow: none; color: var(--muted); font-size: 14px; }
   .room-cfg { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; font-size: 14px; }
   .room-cfg select { font: inherit; font-size: 14px; color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; }
   .chan { display: flex; gap: 6px; margin-bottom: 6px; }
@@ -503,16 +504,16 @@
 <div id="quick" class="hidden"></div>
 <div id="prof" class="hidden"><div class="card"><h3>你的名字和頭像</h3><input id="profName" maxlength="12" placeholder="名字（最多 12 個字）" autocomplete="off"><p class="muted" style="font-size:12px;margin:-4px 0 10px">名字會顯示給對手、觀眾和大廳，建議用暱稱，不要用真實姓名。</p><div class="av-grid" id="avGrid"></div><div class="row" style="justify-content:flex-end"><button class="primary" id="profSave">好了</button></div></div></div>
 <div id="ask" class="hidden"><div class="card"><p id="askText"></p><input id="askInput" class="hidden" type="password" maxlength="20" autocomplete="off" style="width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin:-6px 0 14px"><div class="row"><button class="primary" id="askYes"></button><button id="askNo"></button></div></div></div>
-<div class="ver">版本 22</div>
+<div class="ver">版本 23</div>
 <div id="overlay" class="hidden"><div class="card"><div class="stamp" id="ovStamp"></div><h2 id="ovTitle"></h2><p id="ovReason"></p><p id="ovFair" class="muted fair-note"></p><div class="row"><button class="primary" id="ovAgain" data-t="again"></button><button id="ovClose" data-t="close"></button></div></div></div>
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js" integrity="sha384-u4uqeACkFcoKl57rBQJHVGDd1pqhW4w8X3WjTu1ZksPdxoLqdt34jpoNkJisE25W" crossorigin="anonymous"></script>
-<script src="logic.js?v=22"></script>
-<script src="stickers.js?v=22"></script>
+<script src="logic.js?v=23"></script>
+<script src="stickers.js?v=23"></script>
 <script>
-const APP_VER = '22';
+const APP_VER = '23';
 (function checkVersion() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.text() : '')).then(v => {
     v = v.trim();
@@ -782,6 +783,7 @@ function render(animate = true) {
     if (store.get('bq-over') !== shownOver) { store.set('bq-over', shownOver); setTimeout(showOver, animate ? 700 : 0); }   // once per finished game, not on every reload
   }
   if (!state.winner && !$('overlay').classList.contains('hidden')) hideOver();
+  markRecent(state.winner ? 'done' : state.moveNo > 0 ? 'live' : '');
   updateButtons();
   trackTurn();
 }
@@ -1667,7 +1669,7 @@ const TAUNTS = ['就這？', '你在想什麼', '謝謝招待', '我等到睡著
 // Popular meme sounds, played straight from MyInstants (their files, linked, not copied here).
 const BOARD = [['💥 Vine Boom', 'vine-boom'], ['😑 Bruh', 'movie_1'], ['😱 FAAAH', 'faaah'], ['📯 空氣喇叭', 'mlg-airhorn'], ['💀 情感傷害', 'emotional-damage-meme'],
   ['🎺 悲傷長號', 'sadtrombone.swf'], ['🥁 蹦蹦嚓', 'rimshot'], ['🦗 冷場蟋蟀', 'crickets'], ['🎻 悲傷小提琴', 'tf_nemesis'], ['😹 貓咪狂笑', 'cat-laugh-meme-1'],
-  ['😲 震驚', 'shocked-sound-effect'], ['🔩 鋼管落地', 'gang-guan-luo-di'], ['💪 館長', 'guan-chang'], null,   // removed: a swear word, not for kids
+  ['😲 震驚', 'shocked-sound-effect'], ['🔩 鋼管落地', 'gang-guan-luo-di'], null, null,   // removed: a swear word (not for kids) and an angry rant
   ['🧽 海綿寶寶失敗', 'spongebob-fail'], ['🔪 Among Us', 'among-us-role-reveal-sound'], ['❌ 系統錯誤', 'windows-xp-error'], ['💨 放屁', 'dry-fart']];
 const boardUrl = k => `https://www.myinstants.com/media/sounds/${BOARD[k][1]}.mp3`;
 // One shared <audio> player. MyInstants files can't go through Web Audio (no CORS), and phones only let a page play
@@ -2543,16 +2545,29 @@ function recentList() { try { return (JSON.parse(store.get(RECENT_KEY)) || []).f
 function rememberGame() {
   if (!room || mode === 'local') return;
   const q = '?room=' + room + (mode === 'host' ? '&host=' + new URLSearchParams(location.search).get('host') : (mode === 'watch' ? '&watch=1' : '') + (roomKey ? '&k=' + roomKey : '') + (hostFp ? '&f=' + hostFp : ''));
-  const list = [{ room, q, role: mode, ts: Date.now() }, ...recentList().filter(r => r.room !== room)].slice(0, 5);
+  const old = recentList().find(r => r.room === room);
+  const list = [{ room, q, role: mode, ts: Date.now(), st: old && old.st || '' }, ...recentList().filter(r => r.room !== room)].slice(0, 5);
   store.set(RECENT_KEY, JSON.stringify(list));
 }
-function renderRecent() {
-  const list = recentList().filter(r => Date.now() - r.ts < 7 * 864e5);
-  $('recent').classList.toggle('hidden', !list.length);
-  const label = { host: '我開的局', guest: '我加入的局', watch: '觀戰' };
-  $('recentList').innerHTML = list.map(r => `<div class="room"><div class="rinfo"><div class="rname">${label[r.role] || ''}・房號 ${r.room}</div><div class="rst">${new Date(r.ts).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div></div><button class="primary" data-q="${r.q}">繼續</button></div>`).join('');
+// Only games that are under way are worth coming back to: not empty rooms, not finished games, not spectating.
+function markRecent(st) {
+  if (!room || mode === 'local' || mode === 'watch' || markRecent.st === st) return;
+  const list = recentList(), r = list.find(r => r.room === room);
+  if (!r) return;   // not remembered yet; the next render tries again
+  markRecent.st = st;
+  if (r.st !== st) { r.st = st; r.ts = Date.now(); store.set(RECENT_KEY, JSON.stringify(list)); }
 }
-$('recentList').onclick = e => { const b = e.target.closest('[data-q]'); if (b) location.href = location.pathname + b.dataset.q; };
+function renderRecent() {
+  const list = recentList().filter(r => r.st === 'live' && r.role !== 'watch' && Date.now() - r.ts < 864e5).slice(0, 3);
+  $('recent').classList.toggle('hidden', !list.length);
+  const label = { host: '我開的局', guest: '我加入的局' };
+  $('recentList').innerHTML = list.map(r => `<div class="room"><div class="rinfo"><div class="rname">${label[r.role] || ''}・房號 ${r.room}</div><div class="rst">${new Date(r.ts).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}・還沒下完</div></div><button class="primary" data-q="${r.q}">繼續</button><button class="recent-x" data-del="${r.room}" title="從列表移除" aria-label="從列表移除">✕</button></div>`).join('');
+}
+$('recentList').onclick = e => {
+  const d = e.target.closest('[data-del]');
+  if (d) { store.set(RECENT_KEY, JSON.stringify(recentList().filter(r => r.room !== d.dataset.del))); renderRecent(); return; }
+  const b = e.target.closest('[data-q]'); if (b) location.href = location.pathname + b.dataset.q;
+};
 
 // Things kept on the public relay (spectator board, lobby card) are removed when the host leaves.
 function clearRelay() {   // synchronous on purpose: the page may be gone before a queued publish would run
