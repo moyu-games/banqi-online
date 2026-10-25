@@ -138,7 +138,7 @@ Known limits, stated plainly:
 ### Testing
 
 - Rule unit tests in Node (`test/logic.test.js`).
-- End-to-end tests that drive several headless Chrome tabs over the Chrome DevTools Protocol. They cover host and guest play, reconnection, spectating, passwords, phone layouts, forged-message attacks, a host tab crashing mid-game, instant feedback over the relay (including dropped and refused moves), the fair shuffle (including a cheating host), and frame timing under CPU throttling.
+- End-to-end tests in `test/e2e/` (21 files) that drive several headless Chrome tabs over the Chrome DevTools Protocol. `node test/e2e/run-all.js` serves the working copy and runs them all; see [test/README.md](test/README.md). They cover host and guest play, reconnection, spectating, passwords, phone layouts, forged-message attacks, a host tab crashing mid-game, instant feedback over the relay (including dropped and refused moves), the fair shuffle (including a cheating host), and frame timing under CPU throttling.
 
 ---
 
@@ -168,6 +168,12 @@ Run the rule tests:
 
 ```bash
 node test/logic.test.js
+```
+
+Run the browser tests (Node 22+ and Chrome; about 35 minutes):
+
+```bash
+node test/e2e/run-all.js
 ```
 
 ## Rules

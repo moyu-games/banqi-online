@@ -138,7 +138,7 @@ flowchart LR
 ### 測試
 
 - 規則單元測試用 Node 跑（`test/logic.test.js`）。
-- 端對端測試透過 Chrome DevTools Protocol 同時操作多個無頭 Chrome 分頁，涵蓋雙方對戰、斷線重連、觀戰、密碼、手機版面、偽造訊息攻擊、房主分頁當掉、走中繼時的即時回饋（含掉包和被拒絕的情況）、公平洗牌（含開局方作弊），以及 CPU 降速下的幀時間。
+- 端對端測試放在 `test/e2e/`（21 個檔案），透過 Chrome DevTools Protocol 同時操作多個無頭 Chrome 分頁。執行 `node test/e2e/run-all.js` 會自動提供本機網站並全部跑完，詳見 [test/README.md](test/README.md)。涵蓋雙方對戰、斷線重連、觀戰、密碼、手機版面、偽造訊息攻擊、房主分頁當掉、走中繼時的即時回饋（含掉包和被拒絕的情況）、公平洗牌（含開局方作弊），以及 CPU 降速下的幀時間。
 
 ---
 
@@ -168,6 +168,12 @@ python -m http.server 8765
 
 ```bash
 node test/logic.test.js
+```
+
+跑瀏覽器測試（需要 Node 22 以上和 Chrome，大約 35 分鐘）：
+
+```bash
+node test/e2e/run-all.js
 ```
 
 ## 規則說明
