@@ -504,16 +504,16 @@
 <div id="quick" class="hidden"></div>
 <div id="prof" class="hidden"><div class="card"><h3>你的名字和頭像</h3><input id="profName" maxlength="12" placeholder="名字（最多 12 個字）" autocomplete="off"><p class="muted" style="font-size:12px;margin:-4px 0 10px">名字會顯示給對手、觀眾和大廳，建議用暱稱，不要用真實姓名。</p><div class="av-grid" id="avGrid"></div><div class="row" style="justify-content:flex-end"><button class="primary" id="profSave">好了</button></div></div></div>
 <div id="ask" class="hidden"><div class="card"><p id="askText"></p><input id="askInput" class="hidden" type="password" maxlength="20" autocomplete="off" style="width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin:-6px 0 14px"><div class="row"><button class="primary" id="askYes"></button><button id="askNo"></button></div></div></div>
-<div class="ver">版本 23</div>
+<div class="ver">版本 24</div>
 <div id="overlay" class="hidden"><div class="card"><div class="stamp" id="ovStamp"></div><h2 id="ovTitle"></h2><p id="ovReason"></p><p id="ovFair" class="muted fair-note"></p><div class="row"><button class="primary" id="ovAgain" data-t="again"></button><button id="ovClose" data-t="close"></button></div></div></div>
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js" integrity="sha384-u4uqeACkFcoKl57rBQJHVGDd1pqhW4w8X3WjTu1ZksPdxoLqdt34jpoNkJisE25W" crossorigin="anonymous"></script>
-<script src="logic.js?v=23"></script>
-<script src="stickers.js?v=23"></script>
+<script src="logic.js?v=24"></script>
+<script src="stickers.js?v=24"></script>
 <script>
-const APP_VER = '23';
+const APP_VER = '24';
 (function checkVersion() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.text() : '')).then(v => {
     v = v.trim();
@@ -2024,7 +2024,7 @@ function incoming(env, ch, onAccept) {
     const r = await unseal(env);
     if (!r) return null;
     if (mode === 'host') {
-      const g = await acceptGuest(r.fp, r.m.kp);
+      const g = await acceptGuest(r.fp, r.m.kp, r.m.pf);
       if (g !== true) { if (!onAccept) send({ type: g, to: r.fp }); return { reject: g, to: r.fp }; }
     } else if (mode !== 'guest') return null;
     else if (!trustHost(r.fp)) { foreignAt = Date.now(); return null; }   // signed, but not by the host this link belongs to
@@ -2067,7 +2067,8 @@ function send(msg) {
   const relayMsg = 'rk' in msg ? Object.assign({}, msg, { rk: undefined }) : msg;   // the key never goes on the public relay
   sendQ = sendQ.then(async () => {   // signing is async; the queue keeps messages in order
     if (conn && conn.open) { try { conn.send(await seal(msg)); } catch (_) {} }
-    if (mq && mq.connected) mq.publish(topic(mode === 'host' ? 'guest' : 'host'), JSON.stringify(await seal(relayMsg)), { qos: 1 });
+    const up = gameRelays.filter(r => r.c && r.c.connected);
+    if (up.length) { const raw = JSON.stringify(await seal(relayMsg)); up.forEach(r => r.c.publish(topic(mode === 'host' ? 'guest' : 'host'), raw, { qos: 1 })); }
   }).catch(() => {});
 }
 function setConn(text, kind) {
@@ -2099,6 +2100,7 @@ function receive(m, ch) {
   if (mode === 'guest' && m.type === 'badpw') { if (m.to === myId) needPassword('密碼不對，請再輸入一次'); return; }
   if (mode === 'guest' && typeof m.rk === 'string' && /^([0-9a-f]{16})?$/.test(m.rk) && m.rk !== roomKey) setRoomKey(m.rk);
   if (mode === 'guest' && m.type === 'full') { if (m.to === myId) roomFull(); return; }
+  if (mode === 'guest' && m.type === 'seatWait') { if (m.to === myId && !gotState) { setConn('等房主同意讓你接回這局…', 'wait'); $('status').textContent = '房主那邊會跳出確認，按下「讓他接手」就能接著下。'; } return; }
   if (mode === 'guest' && m.lvl) { if (lvl !== m.lvl) { lvl = m.lvl; updateAudInfo(); } }
   if (mode === 'guest' && typeof m.aud === 'number' && m.aud !== audN) { audN = m.aud; updateAudInfo(); }
   if (mode === 'host' && FWD.includes(m.type)) pubWatchEv('guest', m);
@@ -2170,8 +2172,7 @@ function startRelay(k = 0) {
   c.on('connect', () => {
     ok = true; mq = c;
     if (mode === 'watch') c.subscribe([watchTopic(), pubTopic()], { qos: 1 });
-    else c.subscribe([topic(mode), pubTopic()].concat(mode === 'host' ? [audTopic()] : []), { qos: 1 });
-    if (mode === 'guest') syncReq('hello');
+    else c.subscribe([pubTopic()].concat(mode === 'host' ? [audTopic()] : []), { qos: 1 });
     if (mode === 'host') { pubWatch.on = true; pubWatch(); pubLobby(true); }
     if (mode === 'watch') audPing();
   });
@@ -2182,11 +2183,68 @@ function startRelay(k = 0) {
     let m; try { m = JSON.parse(raw); } catch (_) { return; }
     if (tp === audTopic()) openBox(m).then(onAud);
     else if (tp === pubTopic()) onPub(m);
-    else incoming(m, 'relay');
   });
-  const retry = () => { if (mq === c) mq = null; c.end(true); setTimeout(() => startRelay(ok ? k : k + 1), ok ? 1500 : 500); };
+  // a failed connect is often just the network waking up (a phone back from the background): try the same broker again first
+  const retry = () => { if (mq === c) mq = null; c.end(true); const fails = ok ? 0 : (startRelay.fails || 0) + 1; startRelay.fails = fails; setTimeout(() => startRelay(fails >= 2 ? (startRelay.fails = 0, k + 1) : k), ok ? 1500 : fails ? 1500 : 500); };
   c.on('close', () => { if (!c._retried) { c._retried = true; retry(); } });
   c.on('error', () => {});
+}
+
+// Game messages go through every broker at once. With a single broker each side picked its own after a failed
+// reconnect (a phone back from the background), and the two could end up on different brokers, never hearing each other.
+// Duplicates are dropped by message id.
+const gameRelays = [];
+function startGameRelays() {
+  if (onlyP2P || typeof mqtt === 'undefined' || (mode !== 'host' && mode !== 'guest')) return;
+  BROKERS.forEach((url, k) => { gameRelays[k] = { url, c: null, at: 0 }; gameRelay(k); });
+}
+function gameRelay(k) {
+  const r = gameRelays[k];
+  clearTimeout(r.t);
+  if (r.c) { const o = r.c; r.c = null; o.end(true); }
+  const c = mqtt.connect(r.url, { clientId: 'bq-' + rid(), clean: true, connectTimeout: 7000, reconnectPeriod: 0, keepalive: 20 });
+  r.c = c; r.at = Date.now();
+  r.t = setTimeout(() => { if (r.c === c && !c.connected) gameRelay(k); }, 9000);   // a connect can hang without ever failing
+  c.on('connect', () => {
+    clearTimeout(r.t);
+    c.subscribe(topic(mode), { qos: 1 });
+    if (mode === 'guest') syncReq('hello'); else { send({ type: 'ping' }); if (state) sendState(); }   // a move made while this was down reaches the friend now
+  });
+  c.on('message', (tp, payload) => {
+    r.at = Date.now();
+    const raw = payload.toString();
+    if (raw.length > 64000) return;
+    let m; try { m = JSON.parse(raw); } catch (_) { return; }
+    incoming(m, 'relay');
+  });
+  const again = () => { if (r.c !== c) return; r.c = null; c.end(true); r.t = setTimeout(() => gameRelay(k), 2000); };
+  c.on('close', again);
+  c.on('error', () => {});
+}
+// Back from the background, or the network came back: a socket can look open but be dead, so any relay that has
+// heard nothing lately is reconnected now instead of after the keepalive runs out.
+function wakeRelays() {
+  if (mode !== 'host' && mode !== 'guest') return;
+  const now = Date.now();
+  gameRelays.forEach((r, k) => { if (r && (!r.c || !r.c.connected || now - r.at > 9000)) gameRelay(k); });
+  if (peer && !peer.destroyed && peer.disconnected) peer.reconnect();
+  if (mode === 'guest') { syncReq('hello'); if (peer && peer.open && !(conn && conn.open)) connectToHost(); }
+  else send({ type: 'ping' });
+}
+addEventListener('online', wakeRelays);
+// A socket can say "connected" and still carry nothing. The other side pings every 4 s, so after 10 s of silence every
+// relay is reconnected, then again with a growing gap (15 s, then every 30 s) while it stays quiet.
+let kickAt = 0, kickGap = 15000;
+function watchSilence() {
+  if ((mode !== 'host' && mode !== 'guest') || !gameRelays.length) return;
+  const now = Date.now();
+  if (now - lastHeard < 10000) { kickGap = 15000; return; }
+  if (mode === 'host' && !everJoined) return;   // nobody to hear from yet
+  if (!lastHeard && now - startedAt < 15000) return;   // still making the first connections
+  if (now - kickAt < kickGap) return;
+  kickAt = now; kickGap = Math.min(kickGap * 2, 30000);
+  gameRelays.forEach((r, k) => r && gameRelay(k));
+  if (mode === 'guest' && peer && peer.open && !(conn && conn.open)) connectToHost();
 }
 
 // --- channel 1: PeerJS direct ---
@@ -2222,6 +2280,7 @@ function startNet() {
   setTimeout(() => PARTY_CATS.forEach(id => { const x = STICKERS.find(k => k.id === id); if (x) new Image().src = x.img; }), 8000);
   startP2P();
   startRelay();
+  startGameRelays();
   updateConn();
   timers.push(setInterval(() => {
     if (mode === 'guest') syncReq(gotState ? 'ping' : 'hello'); else send({ type: 'ping' });
@@ -2231,14 +2290,14 @@ function startNet() {
     timers.push(setInterval(pubWatch, 30000));   // keeps the spectator board fresh even when nobody moves
     timers.push(setInterval(countAud, 5000));
   }
-  timers.push(setInterval(updateConn, 2000));
+  timers.push(setInterval(() => { updateConn(); watchSilence(); }, 2000));
 }
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) return;
   if (state) document.title = '暗棋對戰';
-  if (mode === 'guest') syncReq('hello');
+  wakeRelays();
 });
-addEventListener('pageshow', () => { if (mode === 'guest') syncReq('hello'); });
+addEventListener('pageshow', e => { if (e.persisted) wakeRelays(); else if (mode === 'guest') syncReq('hello'); });
 
 // ---------- room password ----------
 // The password itself never leaves the host's browser: everyone uses a key = hash(room + password).
@@ -2305,15 +2364,29 @@ const playerName = role => {
   return role === mode ? myName() : oppName();
 };
 // the first guest owns the seat; someone else may take it only after the seat has been silent for a minute
-async function acceptGuest(from, kp) {
+async function acceptGuest(from, kp, pf) {
   const now = Date.now();
+  if (handover.ok === from) { handover.ok = ''; cfg.guest = from; cfg.guestSeen = now; saveCfg(); return true; }
   if (cfg.key && cfg.guest !== from && kp !== (await sha256(cfg.key + '|' + from)).slice(0, 32)) return 'badpw';   // a new seat needs the password; the seated friend keeps playing
   if (!cfg.guest || cfg.guest === from || now - (cfg.guestSeen || 0) > 60000) {
     if (cfg.guest !== from) { cfg.guest = from; saveCfg(); }
     if (now - (cfg.guestSeen || 0) > 5000) { cfg.guestSeen = now; saveCfg(); } else cfg.guestSeen = now;
     return true;
   }
+  // The seated friend has gone quiet and someone else arrives with the invite: most likely the same friend on a new
+  // browser (an app's built-in browser often keeps nothing), so the host is asked instead of making them wait a minute.
+  if (now - (cfg.guestSeen || 0) > 12000 && !handover.no.has(from)) { askHandover(from, pf); return 'seatWait'; }
   return 'full';
+}
+const handover = { ok: '', asking: '', no: new Set() };
+async function askHandover(from, pf) {
+  if (handover.asking) return;
+  handover.asking = from;
+  const name = pf && typeof pf.n === 'string' && pf.n.trim() ? '「' + pf.n.trim().slice(0, 12) + '」' : '有人';
+  const yes = await ask(name + '用邀請連結回到這局（可能是朋友換了瀏覽器或重開了連結）。要讓他接手朋友的位置繼續下嗎？', '讓他接手', '不要');
+  handover.asking = '';
+  if (cfg.guest !== from && Date.now() - (cfg.guestSeen || 0) <= 12000) return;   // the old friend came back meanwhile
+  if (yes) { handover.ok = from; send({ type: 'ping' }); sendState(); } else handover.no.add(from);
 }
 function roomFull() {
   if (roomFull.done) return;
@@ -2652,7 +2725,7 @@ function boot() {
   room = q.get('room');
   if (q.get('local')) { mode = 'local'; loadOrNew(); }
   else if (room && !/^[a-z0-9]{6}$/.test(room)) { room = null; return; }
-  else if (room && q.get('host')) { mode = 'host'; loadOrNew(); loadCfg(); roomKey = cfg.key || ''; }
+  else if (room && q.get('host')) { const foreign = store.get('bq-cfg-' + room) === null && store.get('bq-room-' + room) === null; mode = 'host'; loadOrNew(); loadCfg(); roomKey = cfg.key || ''; if (foreign) setTimeout(() => ask('這個瀏覽器沒有這局的紀錄，所以棋盤是新的一局。如果是換了瀏覽器或用 App 裡的瀏覽器打開，請回到當初開房的那個瀏覽器，才能接著原本的棋局；朋友那邊也會看不到你。', '知道了', '回大廳').then(ok => { if (!ok) goHome(); }), 800); }
   else if (room && q.get('watch')) { mode = 'watch'; state = null; roomKey = /^[0-9a-f]{16}$/.test(q.get('k') || '') ? q.get('k') : ''; }
   else if (room) { mode = 'guest'; state = null; roomKey = /^[0-9a-f]{16}$/.test(q.get('k') || '') ? q.get('k') : ''; }
   else { renderRecent(); startLobbyView(); return; }

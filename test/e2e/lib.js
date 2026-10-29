@@ -24,10 +24,10 @@ function chromeBin() {
 }
 
 // Launch Chrome (low priority, no window) and connect to it.
-async function launch() {
+async function launch(flags = []) {
   const [bin, extra] = chromeBin();
   const port = 9300 + Math.floor(Math.random() * 500), ud = fs.mkdtempSync(path.join(os.tmpdir(), 'banqi-e2e-'));
-  const ch = spawn(bin, [...extra, `--remote-debugging-port=${port}`, `--user-data-dir=${ud}`, '--no-first-run', '--disable-gpu', 'about:blank'], { stdio: 'ignore' });
+  const ch = spawn(bin, [...extra, `--remote-debugging-port=${port}`, `--user-data-dir=${ud}`, '--no-first-run', '--disable-gpu', ...flags, 'about:blank'], { stdio: 'ignore' });
   try { os.setPriority(ch.pid, os.constants.priority.PRIORITY_BELOW_NORMAL); } catch (_) {}
   let ver; for (let i = 0; i < 60; i++) { try { ver = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json(); break; } catch (_) { await sleep(200); } }
   if (!ver) throw new Error('Chrome did not start');
@@ -35,15 +35,18 @@ async function launch() {
   return { ch, ws };
 }
 
-function run(body) {
+function run(body, opts = {}) {   // opts.flags: extra Chrome switches for every browser of this test
   const base = process.argv[2], out = process.argv[3] || path.join(__dirname, 'out');
   if (!base) { console.error('usage: node ' + path.basename(process.argv[1]) + ' <base-url> [out-dir]'); process.exit(2); }
   fs.mkdirSync(out, { recursive: true });
   let fails = 0;
   const check = (name, ok, x = '') => { console.log((ok ? 'PASS ' : 'FAIL ') + name + (x ? ' — ' + x : '')); if (!ok) fails++; };
-  (async () => {
-    const { ch, ws } = await launch();
-    let id = 0; const pend = {}, errs = [];
+  const errs = [], browsers = [];
+  // One Chrome process; its tabs share Chrome's network stack (and its per-server connection queue).
+  async function browser() {
+    const { ch, ws } = await launch(opts.flags);
+    browsers.push(ch);
+    let id = 0; const pend = {};
     const send = (method, params = {}, sessionId) => new Promise(r => { const i = ++id; pend[i] = r; ws.send(JSON.stringify({ id: i, method, params, sessionId })); });
     ws.onmessage = e => {
       const m = JSON.parse(e.data);
@@ -68,13 +71,18 @@ function run(body) {
       const shot = async f => { const r = await S('Page.captureScreenshot', { format: 'png' }); fs.writeFileSync(path.join(out, f), Buffer.from(r.result.data, 'base64')); };
       return { ctx: browserContextId, S, ev, shot, nav: async u => { await S('Page.navigate', { url: u }); await sleep(1500); } };
     }
+    return { tab, send };
+  }
+  (async () => {
+    const { tab, send } = await browser();
     const until = async (t, expr, ms = 20000) => { const end = Date.now() + ms; while (Date.now() < end) { try { if (await t.ev('return !!(' + expr + ')')) return true; } catch (_) {} await sleep(400); } return false; };
     const setProfile = (t, name) => t.ev(`document.getElementById('profName').value=${JSON.stringify(name)};document.getElementById('profSave').click();return 1`);
-    await body({ tab, until, check, setProfile, sleep, send, base, out, errs });
+    // browser(): a second, separate Chrome, like a second device
+    await body({ tab, browser, until, check, setProfile, sleep, send, base, out, errs });
     console.log('page errors:', errs.length ? errs : 'none');
     console.log(fails ? `${fails} FAILED` : 'ALL PASSED');
-    ch.kill(); process.exit(fails ? 1 : 0);
-  })().catch(e => { console.error('CRASH', e.message); process.exit(1); });
+    browsers.forEach(ch => ch.kill()); process.exit(fails ? 1 : 0);
+  })().catch(e => { console.error('CRASH', e.message); browsers.forEach(ch => ch.kill()); process.exit(1); });
 }
 
 module.exports = { run, chromeBin, launch, sleep };
